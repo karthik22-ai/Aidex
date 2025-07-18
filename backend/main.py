@@ -8,7 +8,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from aiohttp import ClientSession
-from agents import medical_guard_agent, symptom_analysis_agent, language_translation_agent, visual_analysis_agent
+from backend.agents import medical_guard_agent, symptom_analysis_agent, language_translation_agent, visual_analysis_agent
 from dotenv import load_dotenv
 
 # --- Load Environment Variables ---
