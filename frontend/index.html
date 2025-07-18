@@ -1,0 +1,3621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aidex</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        :root {
+            --bg-light: #ffffff;
+            --text-light: #333333;
+            --header-bg-light: #f0f0f0;
+            --header-shadow-light: rgba(0, 0, 0, 0.1);
+            --bubble-ai-bg-light: #e0e0e0;
+            --input-area-bg-light: #f0f0f0;
+            --input-bg-light: #ffffff;
+            --border-light: #cccccc;
+            --modal-bg-light: #f0f0f0;
+            --settings-nav-bg-light: #f8f8f8;
+            --settings-nav-hover-light: #e0e0e0;
+            --settings-nav-active-light: #e9ecef;
+            --button-bg-light: #ffffff;
+            --button-border-light: #cccccc;
+            --button-text-light: #333333;
+            --sidebar-bg-light: #f8f9fa;
+            --sidebar-text-light: #333;
+            --sidebar-hover-light: #e9ecef;
+            --sidebar-border-light: #dee2e6;
+
+            --bg-dark: #28282B; /* Matte Black */
+            --text-dark: #F0F8FF; /* AliceBlue as Lightning White */
+            --header-bg-dark: #1a1a1c;
+            --header-shadow-dark: rgba(255, 255, 255, 0.05);
+            --bubble-ai-bg-dark: #3a3a3c;
+            --input-area-bg-dark: #1a1a1c;
+            --input-bg-dark: #28282B;
+            --border-dark: #444;
+            --modal-bg-dark: #28282B;
+            --settings-nav-bg-dark: #1a1a1c;
+            --settings-nav-hover-dark: #3a3a3c;
+            --settings-nav-active-dark: #3a3a3c;
+            --button-bg-dark: #3a3a3c;
+            --button-border-dark: #444;
+            --button-text-dark: #F0F8FF;
+            --sidebar-bg-dark: #202123;
+            --sidebar-text-dark: #ececec;
+            --sidebar-hover-dark: #343541;
+            --sidebar-border-dark: #343541;
+        }
+
+        .dark body {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+        
+        #app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        #sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg-light);
+            color: var(--sidebar-text-light);
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem;
+            flex-shrink: 0;
+            transition: width 0.3s ease, background-color 0.3s, color 0.3s;
+            border-right: 1px solid var(--sidebar-border-light);
+        }
+        .dark #sidebar {
+            background-color: var(--sidebar-bg-dark);
+            color: var(--sidebar-text-dark);
+            border-right-color: var(--sidebar-border-dark);
+        }
+        #sidebar.collapsed {
+            width: 80px;
+            padding: 0.75rem 0.5rem;
+        }
+        #sidebar.collapsed .sidebar-logo span,
+        #sidebar.collapsed .sidebar-item span,
+        #sidebar.collapsed .recent-chats-header,
+        #sidebar.collapsed .recent-chat-item span,
+        #sidebar.collapsed .sidebar-footer span,
+        #sidebar.collapsed .new-chat-btn span {
+            display: none;
+        }
+        #sidebar.collapsed .sidebar-header,
+        #sidebar.collapsed .sidebar-item {
+            justify-content: center;
+        }
+        #sidebar.collapsed .new-chat-btn {
+            width: 100%;
+            justify-content: center;
+        }
+        #sidebar.collapsed .sidebar-item svg {
+            margin-right: 0;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .dark .sidebar-logo { color: white; }
+
+
+        .new-chat-btn {
+            background: none;
+            border: 1px solid var(--button-border-light);
+            color: var(--button-text-light);
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+        .dark .new-chat-btn {
+            border-color: #555;
+            color: #ececec;
+        }
+        .new-chat-btn:hover {
+            background-color: var(--sidebar-hover-light);
+        }
+        .dark .new-chat-btn:hover {
+            background-color: #343541;
+        }
+
+
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 0.875rem;
+        }
+        .sidebar-item:hover {
+            background-color: var(--sidebar-hover-light);
+        }
+        .dark .sidebar-item:hover {
+            background-color: var(--sidebar-hover-dark);
+        }
+        .sidebar-item svg {
+            margin-right: 0.75rem;
+        }
+
+        .recent-chats {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        .recent-chats-header {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #8e8ea0;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .recent-chat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        .recent-chat-item:hover {
+             background-color: var(--sidebar-hover-light);
+        }
+        .dark .recent-chat-item:hover {
+             background-color: var(--sidebar-hover-dark);
+        }
+        .chat-options-btn {
+            background: none;
+            border: none;
+            color: #8e8ea0;
+            cursor: pointer;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 0.25rem;
+        }
+        .recent-chat-item:hover .chat-options-btn {
+            visibility: visible;
+            opacity: 1;
+        }
+        .chat-options-menu {
+            position: absolute;
+            right: 1rem;
+            top: 2.5rem;
+            background-color: #444654;
+            border-radius: 0.375rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            z-index: 10;
+            display: none;
+        }
+        .chat-options-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.5rem 1rem;
+            color: #ececec;
+            font-size: 0.875rem;
+        }
+        .chat-options-menu button:hover {
+            background-color: #555;
+        }
+
+
+        .sidebar-footer {
+            border-top: 1px solid var(--sidebar-border-light);
+            padding-top: 1rem;
+            transition: border-color 0.3s;
+        }
+        .dark .sidebar-footer {
+            border-top-color: var(--sidebar-border-dark);
+        }
+
+
+        #main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #main-content.sidebar-collapsed {
+            width: calc(100% - 80px);
+        }
+
+        .header {
+            background-color: var(--header-bg-light);
+            padding: 1rem;
+            box-shadow: 0 2px 5px var(--header-shadow-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            color: var(--text-light);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .dark .header {
+            background-color: var(--header-bg-dark);
+            box-shadow: 0 2px 5px var(--header-shadow-dark);
+            color: var(--text-dark);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #007bff;
+        }
+        .user-id-display {
+            font-size: 0.75rem;
+            color: #666666;
+            margin-left: 1rem;
+            word-break: break-all;
+            flex-grow: 1;
+            text-align: right;
+        }
+        .dark .user-id-display {
+            color: #aaa;
+        }
+        .profile-container {
+            position: relative;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .profile-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .profile-button:hover {
+            background-color: #0056b3;
+        }
+        .profile-dropdown {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            background-color: var(--settings-nav-bg-light);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            min-width: 180px;
+            z-index: 100;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out, transform 0.3s ease-out, background-color 0.3s;
+        }
+        .dark .profile-dropdown {
+             background-color: var(--header-bg-dark);
+        }
+        .profile-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .profile-dropdown a, .profile-dropdown .dropdown-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        .dark .profile-dropdown a, .dark .profile-dropdown .dropdown-item {
+            color: var(--text-dark);
+        }
+        .profile-dropdown a:hover, .profile-dropdown .dropdown-item:hover {
+            background-color: var(--settings-nav-hover-light);
+        }
+        .dark .profile-dropdown a:hover, .dark .profile-dropdown .dropdown-item:hover {
+             background-color: var(--settings-nav-hover-dark);
+        }
+        .profile-dropdown .dropdown-header {
+            font-weight: bold;
+            padding: 0.75rem 1rem 0.25rem;
+            color: #666666;
+            cursor: default;
+        }
+        .dark .profile-dropdown .dropdown-header {
+            color: #aaa;
+        }
+        .chat-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message.ai {
+            justify-content: flex-start;
+        }
+        .message-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 1.25rem;
+            max-width: 75%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .message.user .message-bubble {
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .message.ai .message-bubble {
+            background-color: var(--bubble-ai-bg-light);
+            color: var(--text-light);
+            border-bottom-left-radius: 0.25rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark .message.ai .message-bubble {
+            background-color: var(--bubble-ai-bg-dark);
+            color: var(--text-dark);
+        }
+        .avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .avatar.user {
+            background-color: #007bff;
+        }
+        .avatar.ai {
+            background-color: #666666;
+        }
+        .feedback-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            border-top: 1px solid var(--border-light);
+            padding-top: 0.5rem;
+        }
+        .dark .feedback-buttons {
+            border-top-color: var(--border-dark);
+        }
+        .feedback-btn, .speak-btn { /* Added .speak-btn */
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.2s;
+            padding: 0; /* Remove padding to make icon size consistent */
+            width: 24px; /* Fixed width for icons */
+            height: 24px; /* Fixed height for icons */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .feedback-btn svg, .speak-btn svg {
+            width: 20px; /* Adjust SVG size */
+            height: 20px; /* Adjust SVG size */
+        }
+        .dark .feedback-btn, .dark .speak-btn { /* Added .speak-btn */
+            color: #aaa;
+        }
+        .feedback-btn:hover, .speak-btn:hover { /* Added .speak-btn */
+            color: #007bff;
+        }
+        .input-area {
+            background-color: var(--input-area-bg-light);
+            padding: 1rem;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column; /* Changed to column */
+            gap: 0.5rem;
+            align-items: center;
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 1rem 1rem 0 0;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .dark .input-area {
+            background-color: var(--input-area-bg-dark);
+            border-top-color: var(--border-dark);
+        }
+        .main-input-row {
+            display: flex;
+            width: 100%;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .input-area textarea {
+            flex-grow: 1;
+            background-color: var(--input-bg-light);
+            border: 1px solid var(--border-light);
+            border-radius: 1.5rem;
+            padding: 0.75rem 1.25rem;
+            color: var(--text-light);
+            resize: none;
+            min-height: 2.5rem;
+            max-height: 8rem;
+            overflow-y: auto;
+            outline: none;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+        }
+        .dark .input-area textarea {
+            background-color: var(--input-bg-dark);
+            border-color: var(--border-dark);
+            color: var(--text-dark);
+        }
+        .dark .input-area textarea::placeholder {
+            color: #aaa;
+        }
+        .input-area textarea::-webkit-scrollbar {
+            display: none;
+        }
+        .input-area #mic-button, .input-area #upload-button { /* Added #upload-button */
+            background-color: transparent;
+            color: var(--button-text-light);
+            box-shadow: none;
+            border: 1px solid var(--border-light);
+            padding: 0.5rem 0.75rem;
+            border-radius: 1.5rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        .dark .input-area #mic-button, .dark .input-area #upload-button { /* Added #upload-button */
+            color: var(--button-text-dark);
+            border-color: var(--border-dark);
+        }
+        .input-area #mic-button:hover, .input-area #upload-button:hover { /* Added #upload-button */
+            background-color: #e0e0e0;
+        }
+        .dark .input-area #mic-button:hover, .dark .input-area #upload-button:hover { /* Added #upload-button */
+            background-color: var(--settings-nav-hover-dark);
+        }
+        .input-area #mic-button.microphone-active {
+            background-color: #dc3545;
+            color: white;
+        }
+        .input-area #send-button {
+            background-color: #007bff;
+            color: white;
+        }
+        .input-area #send-button:hover {
+            background-color: #0056b3;
+        }
+        .loading-indicator {
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+            color: #666666;
+            font-style: italic;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: var(--modal-bg-light);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 95%;
+            max-height: 95vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-out, background-color 0.3s, color 0.3s;
+            color: var(--text-light);
+        }
+        .dark .modal-content {
+            background-color: var(--modal-bg-dark);
+            color: var(--text-dark);
+        }
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            z-index: 10;
+        }
+        .dark .modal-close-button {
+            color: var(--text-dark);
+        }
+        .modal-footer {
+            margin-top: 1rem;
+            flex-shrink: 0; 
+        }
+        .modal-footer button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+        .modal-footer button:hover {
+            background-color: #0056b3;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 28px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #007bff;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px #007bff;
+        }
+        input:checked + .slider:before {
+            -webkit-transform: translateX(22px);
+            -ms-transform: translateX(22px);
+            transform: translateX(22px);
+        }
+        .modal-content input[type="text"],
+        .modal-content textarea,
+        .modal-content select {
+            width: 100%;
+            border: 1px solid var(--border-light); 
+            border-radius: 0.5rem; 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            padding: 0.5rem;
+            background-color: var(--input-bg-light); 
+            color: var(--text-light); 
+        }
+        .dark .modal-content input[type="text"],
+        .dark .modal-content textarea,
+        .dark .modal-content select {
+             border-color: var(--border-dark);
+             background-color: var(--input-bg-dark);
+             color: var(--text-dark);
+        }
+        .modal-content input[type="text"]:focus,
+        .modal-content textarea:focus,
+        .modal-content select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        .settings-modal-body {
+            display: flex;
+            flex-grow: 1; 
+            border-radius: 0.5rem; 
+            overflow: hidden;
+        }
+        .settings-nav {
+            width: 180px;
+            background-color: var(--settings-nav-bg-light); 
+            padding: 0.75rem;
+            border-right: 1px solid var(--border-light); 
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex-shrink: 0; 
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .dark .settings-nav {
+            background-color: var(--settings-nav-dark);
+            border-right-color: var(--border-dark);
+        }
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .dark .settings-nav-item {
+            color: var(--text-dark);
+        }
+        .settings-nav-item:hover {
+            background-color: var(--settings-nav-hover-light);
+        }
+        .dark .settings-nav-item:hover {
+            background-color: var(--settings-nav-hover-dark);
+        }
+        .settings-nav-item.active {
+            background-color: var(--settings-nav-active-light);
+            font-weight: 600;
+            color: #007bff; 
+        }
+        .dark .settings-nav-item.active {
+            background-color: var(--settings-nav-active-dark);
+        }
+        .settings-nav-item svg {
+            width: 1.25rem; 
+            height: 1.25rem; 
+            margin-right: 0.5rem;
+            stroke: currentColor; 
+        }
+        .settings-content-area {
+            flex-grow: 1;
+            padding: 0.5rem 1.5rem;
+            overflow-y: hidden;
+            text-align: left; 
+        }
+        .settings-section {
+            display: none; 
+        }
+        .settings-section.active {
+            display: block; 
+        }
+        .settings-section h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.5rem;
+            transition: border-color 0.3s;
+        }
+        .dark .settings-section h4 {
+            border-bottom-color: var(--border-dark);
+        }
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+        }
+        .settings-item-text {
+            display: flex;
+            flex-direction: column;
+            padding-right: 1rem;
+        }
+        .settings-item-text label {
+            font-weight: 500;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        .dark .settings-item-text label {
+            color: var(--text-dark);
+        }
+        .settings-item-text span {
+            font-size: 0.75rem;
+            color: #666;
+            transition: color 0.3s;
+        }
+        .dark .settings-item-text span {
+            color: #aaa;
+        }
+        .theme-buttons .theme-btn {
+            padding: 0.25rem 0.75rem;
+            border: 1px solid var(--border-light);
+            background-color: var(--button-bg-light);
+            color: var(--button-text-light);
+        }
+        .dark .theme-buttons .theme-btn {
+            border-color: var(--border-dark);
+            background-color: var(--button-bg-dark);
+            color: var(--button-text-dark);
+        }
+        .theme-buttons .theme-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        /* Auth Page Styles */
+        #auth-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+        }
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .dark .auth-container {
+            background-color: var(--header-bg-dark);
+        }
+        .auth-container .relative {
+            margin-bottom: 1rem;
+        }
+        .auth-container input {
+             width: 100%;
+             padding: 0.75rem;
+             border: 1px solid var(--border-light);
+             border-radius: 0.375rem;
+             background-color: var(--input-bg-light);
+             color: var(--text-light);
+        }
+        .dark .auth-container input {
+            border-color: var(--border-dark);
+            background-color: var(--input-bg-dark);
+            color: var(--text-dark);
+        }
+         .auth-container button {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.375rem;
+            background-color: #007bff;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+           }
+           .auth-container button:hover {
+             background-color: #0056b3;
+           }
+        @media (max-width: 768px) {
+            #app-container {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 0.5rem;
+            }
+            .sidebar-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .recent-chats {
+                display: flex;
+                flex-direction: row;
+            }
+            .sidebar-footer {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-page" class="hidden">
+        <div class="auth-container">
+            <div id="login-form">
+                <h2 class="text-2xl font-bold text-center mb-6" data-translate-key="signInToAidex">Sign In to Aidex</h2>
+                <input type="email" id="login-email" placeholder="Email" required class="mb-4">
+                <input type="password" id="login-password" placeholder="Password" required class="w-full p-3 border border-gray-300 rounded-md">
+                <button id="login-button" class="mt-4" data-translate-key="signInBtn">Sign In</button>
+                <p class="text-center text-sm mt-4">
+                    <span data-translate-key="dontHaveAccount">Don't have an account?</span> 
+                    <a href="#" id="show-signup" class="font-medium text-blue-600 hover:underline" data-translate-key="signUpLink">Sign Up</a>
+                </p>
+            </div>
+            <div id="signup-form" class="hidden">
+                <h2 class="text-2xl font-bold text-center mb-6" data-translate-key="createAnAccount">Create an Account</h2>
+                <input type="email" id="signup-email" placeholder="Email" required class="mb-4">
+                <input type="password" id="signup-password" placeholder="Password" required class="w-full p-3 border border-gray-300 rounded-md">
+                <button id="signup-button" class="mt-4" data-translate-key="signUpBtn">Sign Up</button>
+                <p class="text-center text-sm mt-4">
+                    <span data-translate-key="alreadyHaveAccount">Already have an account?</span> 
+                    <a href="#" id="show-login" class="font-medium text-blue-600 hover:underline" data-translate-key="signInLink">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    <span data-translate-key="aidex">Aidex</span>
+                </div>
+            </div>
+            <div class="sidebar-menu">
+                <button class="new-chat-btn" id="new-chat-btn" title="New Chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                    <span data-translate-key="newChat">New Chat</span>
+                </button>
+            </div>
+            <div class="recent-chats" id="recent-chats-list">
+                <div class="recent-chats-header" data-translate-key="recentChats">Recent Chats</div>
+                </div>
+            <div class="sidebar-footer">
+                <div class="sidebar-item" id="upgrade-plan-btn">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5L16 21l-4-4-5 5Z"/><path d="m3 21 5-5"/></svg>
+                    <span data-translate-key="upgradePlan">Upgrade plan</span>
+                </div>
+            </div>
+        </div>
+        <div id="main-content">
+             <header class="header">
+                <div class="flex items-center gap-2">
+                     <button id="sidebar-toggle" class="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+                     </button>
+                     <div id="user-id-display" class="user-id-display"></div>
+                </div>
+                <div class="profile-container">
+                    <button id="profile-button" class="profile-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </button>
+                    <div id="profile-dropdown" class="profile-dropdown">
+                        <div class="dropdown-header" id="user-email-display">Anonymous User</div>
+                        <a href="#" class="dropdown-item" id="customize-aidex-link" data-translate-key="customizeAidex">Customize your Aidex</a>
+                        <a href="#" class="dropdown-item" id="general-settings-link" data-translate-key="generalSettings">General Settings</a>
+                        <a href="#" class="dropdown-item" id="help-link" data-translate-key="help">Help</a>
+                        <a href="#" class="dropdown-item" id="logout-link" data-translate-key="logout">Logout</a>
+                    </div>
+                </div>
+            </header>
+            <main class="flex-grow flex flex-col items-center p-4 overflow-hidden">
+                <div id="chat-container" class="chat-container">
+                    </div>
+                <div class="input-area">
+                    <div class="main-input-row">
+                        <!-- Upload Button and hidden file input -->
+                        <input type="file" id="file-input" class="hidden" accept="image/*, .pdf, .doc, .docx, .txt">
+                        <button id="upload-button" class="transition-colors duration-200">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-paperclip"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        </button>
+                        <button id="mic-button" class="transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                        </button>
+                        <textarea id="user-input" placeholder="Describe your symptoms..." rows="1"></textarea>
+                        <button id="send-button" class="hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4 20-7Z" /><path d="M22 2 11 13" /></svg>
+                        </button>
+                    </div >
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close-button" id="modal-close-button">×</button>
+            <h3 id="modal-title" class="text-xl font-semibold mb-2"></h3>
+            <div id="settings-modal-body" class="settings-modal-body">
+                </div>
+            <div class="modal-footer">
+                <button id="modal-ok-button">Save</button>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+        // --- I18N (Internationalization) ---
+        const translations = {
+            en: {
+                aidex: 'Aidex',
+                newChat: 'New Chat',
+                recentChats: 'Recent Chats',
+                upgradePlan: 'Upgrade plan',
+                customizeAidex: 'Customize your Aidex',
+                generalSettings: 'General Settings',
+                help: 'Help',
+                logout: 'Logout',
+                describeSymptoms: 'Describe your symptoms...',
+                loginRequired: 'Login Required',
+                pleaseLoginToUseVoice: 'Please log in to use the voice input feature.',
+                noSpeechDetected: 'No Speech Detected',
+                couldntHearAnything: "Couldn't hear anything. Please try again.",
+                voiceInputError: 'Voice Input Error',
+                anErrorOccurred: 'An error occurred:',
+                speechSynthesisNotSupported: 'Speech Synthesis Not Supported',
+                browserNoTTS: 'Your browser does not support text-to-speech.',
+                loginError: 'Login Error',
+                signUpError: 'Sign Up Error',
+                success: 'Success',
+                accountCreatedLoggedIn: 'Account created and you are now logged in!',
+                accountCreatedCheckEmail: 'Account created! Please check your email for a confirmation link to log in.',
+                unexpectedErrorSignUp: 'An unexpected error occurred during sign up.',
+                passwordError: 'Password Error',
+                passwordLengthMin: 'Password must be at least {minLength} characters long.',
+                passwordLengthMax: 'Password must be no more than {maxLength} characters long.',
+                passwordUppercase: 'Password must contain at least one uppercase letter.',
+                passwordNumber: 'Password must contain at least one number.',
+                passwordSymbol: 'Password must contain at least one special symbol (e.g., #, @, !).',
+                logoutError: 'Logout Error',
+                failedToLogout: 'Failed to log out. Please try again.',
+                configurationError: 'Configuration Error',
+                supabaseClientInitError: 'Supabase client could not be initialized. Please check the script and your Supabase project details.',
+                chatError: 'Chat Error',
+                couldNotLoadChatHistory: 'Could not load chat history.',
+                authenticationError: 'Authentication Error',
+                notLoggedInSendMessage: 'You are not logged in. Please log in to send messages.',
+                loadingChatHistory: 'Loading chat history...',
+                aidexThinking: 'Aidex is thinking...',
+                backendConnectionError: "Sorry, I couldn't connect to the Aidex brain. Please ensure the backend server is running and there are no network issues.",
+                helpModalTitle: 'Help',
+                helpModalContent: 'Need assistance? Find answers to common questions and support resources here.',
+                emailNotificationsSaved: "Email notification settings saved (not implemented).",
+                pushNotificationsNotAvailable: "Push notification settings are not available in this browser.",
+                chatHistorySaved: "Chat history setting saved (not implemented).",
+                exportingData: "Exporting data (not implemented).",
+                twoFASetup: "2FA setup is not yet implemented.",
+                loginHistoryView: "Viewing login history (not implemented).",
+                passwordChangeNotImplemented: "Password change functionality is not yet implemented.",
+                accountDeletionNotImplemented: "Account deletion functionality is not yet implemented.",
+                aidexsName: "Aidex's Name",
+                aidexNamePlaceholder: "e.g., My Health Assistant",
+                yourMedications: "Your Medications",
+                medicationsPlaceholder: "List any medications you are currently taking...",
+                longTermHealthIssues: "Long-term Health Issues",
+                healthIssuesPlaceholder: "e.g., Diabetes, Asthma...",
+                enableChatPersonalization: "Enable Chat Personalization",
+                allowAidexPersonalization: "Allow Aidex to use this info to tailor conversations.",
+                appearance: "Appearance",
+                theme: "Theme",
+                customizeLookFeel: "Customize the look and feel of the app.",
+                light: "Light",
+                dark: "Dark",
+                interfaceLanguage: "Interface Language",
+                chooseInterfaceLang: "Choose the language for menus and buttons.",
+                voice: "Voice",
+                spokenLanguage: "Spoken Language",
+                languageVoiceInputOutput: "Language for voice input and output.",
+                voiceSelection: "Voice",
+                chooseVoiceResponses: "Choose the voice for spoken responses.",
+                enableVoiceOutput: "Enable Voice Output",
+                readResponsesAloud: "Have responses read aloud automatically.",
+                notifications: "Notifications",
+                emailNotifications: "Email Notifications",
+                receiveUpdatesEmail: "Receive updates and summaries via email.",
+                pushNotifications: "Push Notifications",
+                "get AlertsDevice": "Get alerts directly on your device.",
+                dataControls: "Data Controls",
+                chatHistory: "Chat History",
+                rememberPastConversations: "Allow Aidex to remember past conversations.",
+                exportYourData: "Export Your Data",
+                downloadCopyConversations: "Download a copy of your conversations.",
+                exportBtn: "Export",
+                security: "Security",
+                twoFactorAuthentication: "Two-Factor Authentication (2FA)",
+                addExtraSecurity: "Add an extra layer of security to your account.",
+                setupBtn: "Set Up",
+                loginHistory: "Login History",
+                reviewSignInActivity: "Review recent sign-in activity.",
+                viewBtn: "View",
+                account: "Account",
+                changePassword: "Change Password",
+                updateAccountPassword: "Update your account password.",
+                changeBtn: "Change",
+                deleteAccount: "Delete Account",
+                permanentlyDelete: "Permanently delete your account and all data.",
+                deleteBtn: "Delete",
+                signInToAidex: "Sign In to Aidex",
+                email: "Email",
+                password: "Password",
+                signInBtn: "Sign In",
+                dontHaveAccount: "Don't have an account?",
+                signUpLink: "Sign Up",
+                createAnAccount: "Create an Account",
+                signUpBtn: "Sign Up",
+                alreadyHaveAccount: "Already have an account?",
+                signInLink: "Sign In",
+                listening: "Listening...",
+                chatFrom: "Chat from",
+                delete: "Delete",
+                helloAidexWelcome: "Hello! I'm Aidex, your AI assistant. I can provide general information based on your symptoms. Please remember I am not a medical professional and cannot offer diagnoses or medical advice. Always consult a doctor for health concerns.",
+                uploadingFile: "Uploading file...",
+                fileUploadError: "File Upload Error",
+                fileTooLarge: "File is too large. Maximum size is 5MB.",
+                fileUploadSuccess: "File uploaded successfully for analysis."
+            },
+            es: {
+                aidex: 'Aidex',
+                newChat: 'Nuevo Chat',
+                recentChats: 'Chats Recientes',
+                upgradePlan: 'Actualizar plan',
+                customizeAidex: 'Personalizar Aidex',
+                generalSettings: 'Configuración General',
+                help: 'Ayuda',
+                logout: 'Cerrar Sesión',
+                describeSymptoms: 'Describe tus síntomas...',
+                loginRequired: 'Se requiere iniciar sesión',
+                pleaseLoginToUseVoice: 'Inicie sesión para usar la función de entrada de voz.',
+                noSpeechDetected: 'No se detectó voz',
+                couldntHearAnything: "No pude escuchar nada. Por favor, inténtalo de nuevo.",
+                voiceInputError: 'Error de entrada de voz',
+                anErrorOccurred: 'Ocurrió un error:',
+                speechSynthesisNotSupported: 'Síntesis de voz no compatible',
+                browserNoTTS: 'Tu navegador no es compatible con la función de texto a voz.',
+                loginError: 'Error de inicio de sesión',
+                signUpError: 'Error de registro',
+                success: 'Éxito',
+                accountCreatedLoggedIn: '¡Cuenta creada y has iniciado sesión!',
+                accountCreatedCheckEmail: '¡Cuenta creada! Por favor, revisa tu correo electrónico para un enlace de confirmación para iniciar sesión.',
+                unexpectedErrorSignUp: 'Ocurrió un error inesperado durante el registro.',
+                passwordError: 'Error de contraseña',
+                passwordLengthMin: 'La contraseña debe tener al menos {minLength} caracteres.',
+                passwordLengthMax: 'La contraseña no debe tener más de {maxLength} caracteres.',
+                passwordUppercase: 'La contraseña debe contener al menos una letra mayúscula.',
+                passwordNumber: 'La contraseña debe contener al menos un número.',
+                passwordSymbol: 'La contraseña debe contener al menos un símbolo especial (ej. #, @, !).',
+                logoutError: 'Error al cerrar sesión',
+                failedToLogout: 'No se pudo cerrar la sesión. Por favor, inténtalo de nuevo.',
+                configurationError: 'Error de configuración',
+                supabaseClientInitError: 'No se pudo inicializar el cliente de Supabase. Por favor, verifica el script y los detalles de tu proyecto Supabase.',
+                chatError: 'Error de chat',
+                couldNotLoadChatHistory: 'No se pudo cargar el historial de chat.',
+                authenticationError: 'Error de autenticación',
+                notLoggedInSendMessage: 'No has iniciado sesión. Por favor, inicia sesión para enviar mensajes.',
+                loadingChatHistory: 'Cargando historial de chat...',
+                aidexThinking: 'Aidex está pensando...',
+                backendConnectionError: "Lo siento, no pude conectar con el cerebro de Aidex. Asegúrate de que el servidor backend esté en funcionamiento y no haya problemas de red.",
+                helpModalTitle: 'Ayuda',
+                helpModalContent: '¿Necesitas ayuda? Encuentra respuestas a preguntas comunes y recursos de soporte aquí.',
+                emailNotificationsSaved: "Configuración de notificaciones por correo electrónico guardada (no implementado).",
+                pushNotificationsNotAvailable: "Las notificaciones push no están disponibles en este navegador.",
+                chatHistorySaved: "Configuración del historial de chat guardada (no implementado).",
+                exportingData: "Exportando datos (no implementado).",
+                twoFASetup: "La configuración de 2FA aún no está implementada.",
+                loginHistoryView: "Ver historial de inicio de sesión (no implementado).",
+                passwordChangeNotImplemented: "La funcionalidad de cambio de contraseña aún no está implementada.",
+                accountDeletionNotImplemented: "La funcionalidad de eliminación de cuenta aún no está implementada.",
+                aidexsName: "Nombre de Aidex",
+                aidexNamePlaceholder: "Ej. Mi Asistente de Salud",
+                yourMedications: "Tus Medicamentos",
+                medicationsPlaceholder: "Enumera los medicamentos que estás tomando actualmente...",
+                longTermHealthIssues: "Problemas de Salud a Largo Plazo",
+                healthIssuesPlaceholder: "Ej. Diabetes, Asma...",
+                enableChatPersonalization: "Habilitar Personalización del Chat",
+                allowAidexPersonalization: "Permitir que Aidex use esta información para adaptar las conversaciones.",
+                appearance: "Apariencia",
+                theme: "Tema",
+                customizeLookFeel: "Personaliza la apariencia de la aplicación.",
+                light: "Claro",
+                dark: "Oscuro",
+                interfaceLanguage: "Idioma de la Interfaz",
+                chooseInterfaceLang: "Elige el idioma para menús y botones.",
+                voice: "Voz",
+                spokenLanguage: "Idioma Hablado",
+                languageVoiceInputOutput: "Idioma para entrada y salida de voz.",
+                voiceSelection: "Voz",
+                chooseVoiceResponses: "Elige la voz para las respuestas habladas.",
+                enableVoiceOutput: "Habilitar Salida de Voz",
+                readResponsesAloud: "Hacer que las respuestas se lean en voz alta automáticamente.",
+                notifications: "Notificaciones",
+                emailNotifications: "Notificaciones por Correo Electrónico",
+                receiveUpdatesEmail: "Recibe actualizaciones y resúmenes por correo electrónico.",
+                pushNotifications: "Notificaciones Push",
+                "get AlertsDevice": "Recibe alertas directamente en tu dispositivo.",
+                dataControls: "Controles de Datos",
+                chatHistory: "Historial de Chat",
+                rememberPastConversations: "Permitir que Aidex recuerde conversaciones pasadas.",
+                exportYourData: "Exportar tus Datos",
+                downloadCopyConversations: "Descarga una copia de tus conversaciones.",
+                exportBtn: "Exportar",
+                security: "Seguridad",
+                twoFactorAuthentication: "Autenticación de Dos Factores (2FA)",
+                addExtraSecurity: "Añade una capa extra de seguridad a tu cuenta.",
+                setupBtn: "Configurar",
+                loginHistory: "Historial de Inicio de Sesión",
+                reviewSignInActivity: "Revisa la actividad reciente de inicio de sesión.",
+                viewBtn: "Ver",
+                account: "Cuenta",
+                changePassword: "Cambiar Contraseña",
+                updateAccountPassword: "Actualiza la contraseña de tu cuenta.",
+                changeBtn: "Cambiar",
+                deleteAccount: "Eliminar Cuenta",
+                permanentlyDelete: "Elimina permanentemente tu cuenta y todos los datos.",
+                deleteBtn: "Eliminar",
+                signInToAidex: "Iniciar sesión en Aidex",
+                email: "Correo electrónico",
+                password: "Contraseña",
+                signInBtn: "Iniciar Sesión",
+                dontHaveAccount: "¿No tienes una cuenta?",
+                signUpLink: "Registrarse",
+                createAnAccount: "Crear una cuenta",
+                signUpBtn: "Registrarse",
+                alreadyHaveAccount: "¿Ya tienes una cuenta?",
+                signInLink: "Iniciar Sesión",
+                listening: "Escuchando...",
+                chatFrom: "Chat de",
+                delete: "Eliminar",
+                uploadingFile: "Subiendo archivo...",
+                fileUploadError: "Error al subir archivo",
+                fileTooLarge: "El archivo es demasiado grande. El tamaño máximo es de 5 MB.",
+                fileUploadSuccess: "Archivo subido con éxito para análisis."
+            },
+            hi: {
+                aidex: 'ऐडेक्स',
+                newChat: 'नई चैट',
+                recentChats: 'हाल की चैट',
+                upgradePlan: 'योजना अपग्रेड करें',
+                customizeAidex: 'एडएक्स को अनुकूलित करें',
+                generalSettings: 'सामान्य सेटिंग्स',
+                help: 'मदद',
+                logout: 'लॉग आउट',
+                describeSymptoms: 'अपने लक्षण बताएं...',
+                loginRequired: 'लॉगिन आवश्यक है',
+                pleaseLoginToUseVoice: 'कृपया वॉयस इनपुट सुविधा का उपयोग करने के लिए लॉग इन करें।',
+                noSpeechDetected: 'कोई आवाज़ नहीं सुनी गई',
+                couldntHearAnything: "कुछ सुनाई नहीं दिया। कृपया पुनः प्रयास करें।",
+                voiceInputError: 'वॉयस इनपुट त्रुटि',
+                anErrorOccurred: 'एक त्रुटि हुई:',
+                speechSynthesisNotSupported: 'भाषण संश्लेषण समर्थित नहीं है',
+                browserNoTTS: 'आपका ब्राउज़र टेक्स्ट-टू-SPEECH का समर्थन नहीं करता है।',
+                loginError: 'लॉगिन त्रुटि',
+                signUpError: 'साइन अप त्रुटि',
+                success: 'सफलता',
+                accountCreatedLoggedIn: 'खाता बन गया और अब आप लॉग इन हैं!',
+                accountCreatedCheckEmail: 'खाता बन गया! लॉगिन करने के लिए कृपया अपने ईमेल में पुष्टिकरण लिंक देखें।',
+                unexpectedErrorSignUp: 'साइन अप के दौरान एक अप्रत्याशित त्रुटि हुई।',
+                passwordError: 'पासवर्ड त्रुटि',
+                passwordLengthMin: 'पासवर्ड कम से कम {minLength} वर्ण लंबा होना चाहिए।',
+                passwordLengthMax: 'पासवर्ड {maxLength} वर्णों से अधिक नहीं होना चाहिए।',
+                passwordUppercase: 'पासवर्ड में कम से कम एक बड़ा अक्षर होना चाहिए।',
+                passwordNumber: 'पासवर्ड में कम से कम एक संख्या होनी चाहिए।',
+                passwordSymbol: 'पासवर्ड में कम से कम एक विशेष प्रतीक (जैसे #, @, !) होना चाहिए।',
+                logoutError: 'लॉग आउट त्रुटि',
+                failedToLogout: 'लॉग आउट करने में विफल। कृपया पुनः प्रयास करें।',
+                configurationError: 'कॉन्फ़िगरेशन त्रुटि',
+                supabaseClientInitError: 'सुपरबेस क्लाइंट को प्रारंभ नहीं किया जा सका। कृपया स्क्रिप्ट और अपने सुपरबेस प्रोजेक्ट विवरण की जांच करें।',
+                chatError: 'चैट त्रुटि',
+                couldNotLoadChatHistory: 'चैट इतिहास लोड नहीं किया जा सका।',
+                authenticationError: 'प्रमाणीकरण त्रुटि',
+                notLoggedInSendMessage: 'आप लॉग इन नहीं हैं। संदेश भेजने के लिए कृपया लॉग इन करें।',
+                loadingChatHistory: 'चैट इतिहास लोड हो रहा है...',
+                aidexThinking: 'ऐडेक्स सोच रहा है...',
+                backendConnectionError: "क्षमा करें, मैं ऐडेक्स मस्तिष्क से कनेक्ट नहीं हो सका। कृपया सुनिश्चित करें कि बैकएंड सर्वर चल रहा है और कोई नेटवर्क समस्या नहीं है。",
+                helpModalTitle: 'मदद',
+                helpModalContent: 'सहायता चाहिए? यहां सामान्य प्रश्नों और सहायता संसाधनों के उत्तर प्राप्त करें।',
+                emailNotificationsSaved: "ईमेल सूचना सेटिंग्स सहेजी गईं (लागू नहीं)。",
+                pushNotificationsNotAvailable: "इस ब्राउज़र में पुश सूचनाएं उपलब्ध नहीं हैं。",
+                chatHistorySaved: "चैट इतिहास सेटिंग सहेजी गई (लागू नहीं)。",
+                exportingData: "डेटा निर्यात करना (लागू नहीं)。",
+                twoFASetup: "2FA सेटअप अभी तक लागू नहीं किया गया है。",
+                loginHistoryView: "लॉगिन इतिहास देखना (लागू नहीं)。",
+                passwordChangeNotImplemented: "पासवर्ड बदलने की कार्यक्षमता अभी तक लागू नहीं की गई है。",
+                accountDeletionNotImplemented: "खाता हटाने की कार्यक्षमता अभी तक लागू नहीं की गई है。",
+                aidexsName: "ऐडेक्स का नाम",
+                aidexNamePlaceholder: "उदा. मेरा स्वास्थ्य सहायक",
+                yourMedications: "आपकी दवाएं",
+                medicationsPlaceholder: "वर्तमान में आप जो भी दवाएं ले रहे हैं, उनकी सूची बनाएं...",
+                longTermHealthIssues: "दीर्घकालिक स्वास्थ्य समस्याएं",
+                healthIssuesPlaceholder: "उदा. मधुमेह, अस्थमा...",
+                enableChatPersonalization: "चैट निजीकरण सक्षम करें",
+                allowAidexPersonalization: "ऐडेक्स को बातचीत को अनुकूलित करने के लिए इस जानकारी का उपयोग करने की अनुमति दें。",
+                appearance: "दिखावट",
+                theme: "थीम",
+                customizeLookFeel: "ऐप के स्वरूप और अनुभव को अनुकूलित करें。",
+                light: "हल्का",
+                dark: "गहरा",
+                interfaceLanguage: "इंटरफ़ेस भाषा",
+                chooseInterfaceLang: "मेनू और बटनों के लिए भाषा चुनें。",
+                voice: "आवाज",
+                spokenLanguage: "बोली जाने वाली भाषा",
+                languageVoiceInputOutput: "वॉयस इनपुट और आउटपुट के लिए भाषा。",
+                voiceSelection: "आवाज",
+                chooseVoiceResponses: "बोली गई प्रतिक्रियाओं के लिए आवाज चुनें。",
+                enableVoiceOutput: "वॉयस आउटपुट सक्षम करें",
+                readResponsesAloud: "प्रतिक्रियाओं को स्वचालित रूप से ज़ोर से पढ़ा जाए。",
+                notifications: "सूचनाएं",
+                emailNotifications: "ईमेल सूचनाएं",
+                receiveUpdatesEmail: "ईमेल के माध्यम से अपडेट और सारांश प्राप्त करें。",
+                pushNotifications: "पुश सूचनाएं",
+                "get AlertsDevice": "सीधे अपने डिवाइस पर अलर्ट प्राप्त करें。",
+                dataControls: "डेटा नियंत्रण",
+                chatHistory: "चैट इतिहास",
+                rememberPastConversations: "ऐडेक्स को पिछली बातचीत याद रखने दें。",
+                exportYourData: "अपना डेटा निर्यात करें",
+                downloadCopyConversations: "अपनी बातचीत की एक प्रति डाउनलोड करें。",
+                exportBtn: "निर्यात करें",
+                security: "सुरक्षा",
+                twoFactorAuthentication: "दो-कारक प्रमाणीकरण (2FA)",
+                addExtraSecurity: "अपने खाते में सुरक्षा की एक अतिरिक्त परत जोड़ें。",
+                setupBtn: "सेट अप करें",
+                loginHistory: "लॉगिन इतिहास",
+                reviewSignInActivity: "हाल की साइन-इन गतिविधि की समीक्षा करें。",
+                viewBtn: "देखें",
+                account: "खाता",
+                changePassword: "पासवर्ड बदलें",
+                updateAccountPassword: "अपने खाते का पासवर्ड अपडेट करें。",
+                changeBtn: "बदलें",
+                deleteAccount: "खाता मिटाएं",
+                permanentlyDelete: "अपना खाता और सभी डेटा स्थायी रूप से मिटा दें。",
+                deleteBtn: "मिटाएं",
+                signInToAidex: "ऐडेक्स में साइन इन करें",
+                email: "ईमेल",
+                password: "पासवर्ड",
+                signInBtn: "साइन इन करें",
+                dontHaveAccount: "खाता नहीं है?",
+                signUpLink: "साइन अप करें",
+                createAnAccount: "एक खाता बनाएं",
+                signUpBtn: "साइन अप करें",
+                alreadyHaveAccount: "पहले से ही एक खाता है?",
+                signInLink: "साइन इन करें",
+                listening: "सुन रहा हूँ...",
+                chatFrom: "से चैट करें",
+                delete: "मिटाएं",
+                uploadingFile: "फ़ाइल अपलोड हो रही है...",
+                fileUploadError: "फ़ाइल अपलोड त्रुटि",
+                fileTooLarge: "फ़ाइल बहुत बड़ी है। अधिकतम आकार 5MB.",
+                fileUploadSuccess: "विश्लेषण के लिए फ़ाइल सफलतापूर्वक अपलोड की गई।"
+            },
+            fr: {
+                aidex: 'Aidex',
+                newChat: 'Nouveau Chat',
+                recentChats: 'Chats Récents',
+                upgradePlan: 'Mettre à niveau',
+                customizeAidex: 'Personnaliser Aidex',
+                generalSettings: 'Réglages Généraux',
+                help: 'Aide',
+                logout: 'Déconnexion',
+                describeSymptoms: 'Décrivez vos symptômes...',
+                loginRequired: 'Connexion requise',
+                pleaseLoginToUseVoice: "Veuillez vous connecter pour utiliser la fonction de saisie vocale.",
+                noSpeechDetected: 'Aucune parole détectée',
+                couldntHearAnything: "Je n'ai rien entendu. Veuillez réessayer.",
+                voiceInputError: 'Erreur de saisie vocale',
+                anErrorOccurred: 'Une erreur est survenue :',
+                speechSynthesisNotSupported: 'Synthèse vocale non prise en charge',
+                browserNoTTS: 'Votre navigateur ne prend pas en charge la synthèse vocale.',
+                loginError: 'Erreur de connexion',
+                signUpError: "Erreur d'inscription",
+                success: 'Succès',
+                accountCreatedLoggedIn: 'Compte créé et vous êtes maintenant connecté !',
+                accountCreatedCheckEmail: 'Compte créé ! Veuillez vérifier votre e-mail pour un lien de confirmation pour vous connecter.',
+                unexpectedErrorSignUp: "Une erreur inattendue est survenue lors de l'inscription.",
+                passwordError: 'Erreur de mot de passe',
+                passwordLengthMin: 'Le mot de passe doit contenir au moins {minLength} caractères.',
+                passwordLengthMax: 'Le mot de passe ne doit pas dépasser {maxLength} caractères.',
+                passwordUppercase: 'Le mot de passe doit contenir au moins une lettre majuscule.',
+                passwordNumber: 'Le mot de passe doit contenir au moins un chiffre.',
+                passwordSymbol: 'Le mot de passe doit contenir au moins un symbole spécial (ex. #, @, !).',
+                logoutError: 'Erreur de déconnexion',
+                failedToLogout: 'Échec de la déconnexion. Veuillez réessayer.',
+                configurationError: 'Erreur de configuration',
+                supabaseClientInitError: 'Le client Supabase n\'a pas pu être initialisé. Veuillez vérifier le script et les détails de votre projet Supabase.',
+                chatError: 'Erreur de chat',
+                couldNotLoadChatHistory: "Impossible de charger l'historique du chat.",
+                authenticationError: 'Erreur d\'authentification',
+                notLoggedInSendMessage: "Vous n'êtes pas connecté. Veuillez vous connecter pour envoyer des messages.",
+                loadingChatHistory: "Chargement de l'historique du chat...",
+                aidexThinking: 'Aidex réfléchit...',
+                backendConnectionError: "Désolé, je n'ai pas pu me connecter au cerveau d'Aidex. Veuillez vous assurer que le serveur backend est en cours d'exécution et qu'il n'y a pas de problèmes de réseau.",
+                helpModalTitle: 'Aide',
+                helpModalContent: 'Besoin d\'aide ? Trouvez les réponses aux questions courantes et les ressources de support ici.',
+                emailNotificationsSaved: "Paramètres de notification par e-mail enregistrés (non implémenté).",
+                pushNotificationsNotAvailable: "Les notifications push ne sont pas disponibles dans ce navigateur.",
+                chatHistorySaved: "Paramètre de l'historique de discussion enregistré (non implémenté).",
+                exportingData: "Exportation des données (non implémenté).",
+                twoFASetup: "La configuration 2FA n'est pas encore implémentée.",
+                loginHistoryView: "Affichage de l'historique de connexion (non implémenté).",
+                passwordChangeNotImplemented: "La fonctionnalité d'appel vidéo est en cours de développement.",
+                accountDeletionNotImplemented: "La fonctionnalité de suppression de compte n'est pas encore implémentée.",
+                aidexsName: "Nom d'Aidex",
+                aidexNamePlaceholder: "Ex. Mon assistant de santé",
+                yourMedications: "Vos Médicaments",
+                medicationsPlaceholder: "Listez les médicaments que vous prenez actuellement...",
+                longTermHealthIssues: "Problèmes de Santé à Long Terme",
+                healthIssuesPlaceholder: "Ex. Diabète, Asthme...",
+                enableChatPersonalization: "Activer la Personnalisation du Chat",
+                allowAidexPersonalization: "Permettre à Aidex d'utiliser ces informations pour adapter les conversations.",
+                appearance: "Apparence",
+                theme: "Thème",
+                customizeLookFeel: "Personaliser l'apparence de l'application.",
+                light: "Clair",
+                dark: "Foncé",
+                interfaceLanguage: "Langue de l'Interface",
+                chooseInterfaceLang: "Choisissez la langue pour les menus et les boutons.",
+                voice: "Voix",
+                spokenLanguage: "Langue Parlée",
+                languageVoiceInputOutput: "Langue pour la saisie et la sortie vocales.",
+                voiceSelection: "Voix",
+                chooseVoiceResponses: "Choisissez la voix pour les réponses parlées.",
+                enableVoiceOutput: "Activer la Sortie Vocale",
+                readResponsesAloud: "Faire lire les réponses à voix haute automatiquement.",
+                notifications: "Notifications",
+                emailNotifications: "Notifications par E-mail",
+                receiveUpdatesEmail: "Recevez les mises à jour et les résumés par e-mail.",
+                pushNotifications: "Notifications Push",
+                "get AlertsDevice": "Recevez des alertes directement sur votre appareil.",
+                dataControls: "Contrôles des Données",
+                chatHistory: "Historique du Chat",
+                rememberPastConversations: "Permettre à Aidex de se souvenir des conversations passées.",
+                exportYourData: "Exporter Vos Données",
+                downloadCopyConversations: "Téléchargez une copie de vos conversations.",
+                exportBtn: "Exporter",
+                security: "Sécurité",
+                twoFactorAuthentication: "Authentification à Deux Facteurs (2FA)",
+                addExtraSecurity: "Ajoutez une couche de sécurité supplémentaire à votre compte.",
+                setupBtn: "Configurer",
+                loginHistory: "Historique de Connexion",
+                reviewSignInActivity: "Consultez l'activité de connexion récente.",
+                viewBtn: "Afficher",
+                account: "Compte",
+                changePassword: "Changer le Mot de Passe",
+                updateAccountPassword: "Mettez à jour le mot de passe de votre compte.",
+                changeBtn: "Changer",
+                deleteAccount: "Supprimer le Compte",
+                permanentlyDelete: "Supprimez définitivement votre compte et toutes les données.",
+                deleteBtn: "Supprimer",
+                signInToAidex: "Connectez-vous à Aidex",
+                email: "E-mail",
+                password: "Mot de passe",
+                signInBtn: "Se connecter",
+                dontHaveAccount: "Vous n'avez pas de compte?",
+                signUpLink: "S'inscrire",
+                createAnAccount: "Créer un compte",
+                signUpBtn: "S'inscrire",
+                alreadyHaveAccount: "Vous avez déjà un compte?",
+                signInLink: "Se connecter",
+                listening: "Écoute...",
+                chatFrom: "Chat de",
+                delete: "Supprimer",
+                uploadingFile: "Téléchargement du fichier...",
+                fileUploadError: "Erreur de téléchargement de fichier",
+                fileTooLarge: "Le fichier est trop volumineux. La taille maximale est de 5 Mo.",
+                fileUploadSuccess: "Fichier téléchargé avec succès pour analyse."
+            },
+            de: {
+                aidex: 'Aidex',
+                newChat: 'Neuer Chat',
+                recentChats: 'Letzte Chats',
+                upgradePlan: 'Plan upgraden',
+                customizeAidex: 'Aidex anpassen',
+                generalSettings: 'Allgemeine Einstellungen',
+                help: 'Hilfe',
+                logout: 'Abmelden',
+                describeSymptoms: 'Beschreiben Sie Ihre Symptome...',
+                loginRequired: 'Login erforderlich',
+                pleaseLoginToUseVoice: 'Bitte melden Sie sich an, um die Spracheingabefunktion zu nutzen.',
+                noSpeechDetected: 'Keine Sprache erkannt',
+                couldntHearAnything: "Konnte nichts hören. Bitte versuchen Sie es erneut.",
+                voiceInputError: 'Spracheingabefehler',
+                anErrorOccurred: 'Ein Fehler ist aufgetreten:',
+                speechSynthesisNotSupported: 'Sprachsynthese nicht unterstützt',
+                browserNoTTS: 'Ihr Browser unterstützt keine Text-to-Speech-Funktion.',
+                loginError: 'Login-Fehler',
+                signUpError: 'Registrierungsfehler',
+                success: 'Erfolg',
+                accountCreatedLoggedIn: 'Konto erstellt und Sie sind jetzt angemeldet!',
+                accountCreatedCheckEmail: 'Konto erstellt! Bitte überprüfen Sie Ihre E-Mails für einen Bestätigungslink zum Anmelden.',
+                unexpectedErrorSignUp: 'Während der Registrierung ist ein unerwarteter Fehler aufgetreten.',
+                passwordError: 'Passwortfehler',
+                passwordLengthMin: 'Das Passwort muss mindestens {minLength} Zeichen lang sein.',
+                passwordLengthMax: 'Das Passwort darf nicht länger als {maxLength} Zeichen sein.',
+                passwordUppercase: 'Das Passwort muss mindestens einen Großbuchstaben enthalten.',
+                passwordNumber: 'Das Passwort muss mindestens eine Zahl enthalten.',
+                passwordSymbol: 'Das Passwort muss mindestens ein Sonderzeichen (z.B. #, @, !) enthalten.',
+                logoutError: 'Abmeldefehler',
+                failedToLogout: 'Abmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.',
+                configurationError: 'Konfigurationsfehler',
+                supabaseClientInitError: 'Supabase-Client konnte nicht initialisiert werden. Bitte überprüfen Sie das Skript und Ihre Supabase-Projektdetails.',
+                chatError: 'Chat-Fehler',
+                couldNotLoadChatHistory: 'Chat-Verlauf konnte nicht geladen werden.',
+                authenticationError: 'Authentifizierungsfehler',
+                notLoggedInSendMessage: 'Sie sind nicht angemeldet. Bitte melden Sie sich an, um Nachrichten zu senden.',
+                loadingChatHistory: 'Chat-Verlauf wird geladen...',
+                aidexThinking: 'Aidex denkt nach...',
+                backendConnectionError: "Entschuldigung, ich konnte keine Verbindung zum Aidex-Gehirn herstellen. Bitte stellen Sie sicher, dass der Backend-Server läuft und keine Netzwerkprobleme vorliegen.",
+                helpModalTitle: 'Hilfe',
+                helpModalContent: 'Brauchen Sie Hilfe? Hier finden Sie Antworten auf häufig gestellte Fragen und Support-Ressourcen.',
+                emailNotificationsSaved: "E-Mail-Benachrichtigungseinstellungen gespeichert (nicht implementiert).",
+                pushNotificationsNotAvailable: "Push-Benachrichtigungen sind in diesem Browser nicht verfügbar.",
+                chatHistorySaved: "Chat-Verlaufseinstellung gespeichert (nicht implementiert).",
+                exportingData: "Daten werden exportiert (nicht implementiert).",
+                twoFASetup: "2FA-Einrichtung ist noch nicht implementiert.",
+                loginHistoryView: "Anmeldeverlauf anzeigen (nicht implementiert).",
+                passwordChangeNotImplemented: "Die Funktion zum Ändern des Passworts ist noch nicht implementiert。",
+                accountDeletionNotImplemented: "Die Funktion zum Löschen des Kontos ist noch nicht implementiert。",
+                aidexsName: "Aidex' Name",
+                aidexNamePlaceholder: "z.B. Mein Gesundheitsassistent",
+                yourMedications: "Ihre Medikamente",
+                medicationsPlaceholder: "Listen Sie alle Medikamente auf, die Sie derzeit einnehmen...",
+                longTermHealthIssues: "Langfristige Gesundheitsprobleme",
+                healthIssuesPlaceholder: "z.B. Diabetes, Asthma...",
+                enableChatPersonalization: "Chat-Personalisierung aktivieren",
+                allowAidexPersonalization: "Aidex erlauben, diese Informationen zur Anpassung von Gesprächen zu verwenden。",
+                appearance: "Aussehen",
+                theme: "Thema",
+                customizeLookFeel: "Passen Sie das Erscheinungsbild der App an。",
+                light: "Hell",
+                dark: "Dunkel",
+                interfaceLanguage: "Oberflächensprache",
+                chooseInterfaceLang: "Wählen Sie die Sprache für Menüs und Schaltflächen。",
+                voice: "Stimme",
+                spokenLanguage: "Gesprochene Sprache",
+                languageVoiceInputOutput: "Sprache für Sprachausgabe und -eingabe。",
+                voiceSelection: "Stimme",
+                chooseVoiceResponses: "Wählen Sie die Stimme für gesprochene Antworten。",
+                enableVoiceOutput: "Sprachausgabe aktivieren",
+                readResponsesAloud: "Antworten automatisch vorlesen lassen。",
+                notifications: "Benachrichtigungen",
+                emailNotifications: "E-Mail-Benachrichtigungen",
+                receiveUpdatesEmail: "Erhalten Sie Updates und Zusammenfassungen per E-Mail。",
+                pushNotifications: "Push-Benachrichtigungen",
+                "get AlertsDevice": "Erhalten Sie Benachrichtigungen direkt auf Ihrem Gerät。",
+                dataControls: "Datenkontrollen",
+                chatHistory: "Chat-Verlauf",
+                rememberPastConversations: "Aidex erlauben, vergangene Gespräche zu speichern。",
+                exportYourData: "Ihre Daten exportieren",
+                downloadCopyConversations: "Laden Sie eine Kopie Ihrer Unterhaltungen herunter。",
+                exportBtn: "Exportieren",
+                security: "Sicherheit",
+                twoFactorAuthentication: "Zwei-Faktor-Authentifizierung (2FA)",
+                addExtraSecurity: "Fügen Sie Ihrem Konto eine zusätzliche Sicherheitsebene hinzu。",
+                setupBtn: "Einrichten",
+                loginHistory: "Anmeldeverlauf",
+                reviewSignInActivity: "Überprüfen Sie die letzten Anmeldeaktivitäten。",
+                viewBtn: "Anzeigen",
+                account: "Konto",
+                changePassword: "Passwort ändern",
+                updateAccountPassword: "Aktualisieren Sie Ihr Kontopasswort。",
+                changeBtn: "Ändern",
+                deleteAccount: "Konto löschen",
+                permanentlyDelete: "Löschen Sie Ihr Konto und alle Daten dauerhaft。",
+                deleteBtn: "Löschen",
+                signInToAidex: "Bei Aidex anmelden",
+                email: "E-Mail",
+                password: "Passwort",
+                signInBtn: "Anmelden",
+                dontHaveAccount: "Sie haben kein Konto?",
+                signUpLink: "Registrieren",
+                createAnAccount: "Ein Konto erstellen",
+                signUpBtn: "Registrieren",
+                alreadyHaveAccount: "Sie haben bereits ein Konto?",
+                signInLink: "Anmelden",
+                listening: "Höre zu...",
+                chatFrom: "Chat von",
+                delete: "Löschen",
+                uploadingFile: "Datei wird hochgeladen...",
+                fileUploadError: "Fehler beim Hochladen der Datei",
+                fileTooLarge: "Datei ist zu groß. Maximale Größe beträgt 5 MB.",
+                fileUploadSuccess: "Datei erfolgreich zur Analyse hochgeladen."
+            },
+            zh: {
+                aidex: 'Aidex',
+                newChat: '新聊天',
+                recentChats: '最近聊天',
+                upgradePlan: '升级计划',
+                customizeAidex: '自定义 Aidex',
+                generalSettings: '通用设置',
+                help: '帮助',
+                logout: '登出',
+                describeSymptoms: '描述您的症状...',
+                loginRequired: '需要登录',
+                pleaseLoginToUseVoice: '请登录以使用语音输入功能。',
+                noSpeechDetected: '未检测到语音',
+                couldntHearAnything: "听不到任何声音。请重试。",
+                voiceInputError: '语音输入错误',
+                anErrorOccurred: '发生了一个错误：',
+                speechSynthesisNotSupported: '不支持语音合成',
+                browserNoTTS: '您的浏览器不支持文本转语音功能。',
+                loginError: '登录错误',
+                signUpError: '注册错误',
+                success: '成功',
+                accountCreatedLoggedIn: '帐户已创建，您现已登录！',
+                accountCreatedCheckEmail: '帐户已创建！请检查您的电子邮件以获取登录确认链接。',
+                unexpectedErrorSignUp: '注册过程中发生了一个意外错误。',
+                passwordError: '密码错误',
+                passwordLengthMin: '密码长度至少为 {minLength} 个字符。',
+                passwordLengthMax: '密码长度不能超过 {maxLength} 个字符。',
+                passwordUppercase: '密码必须包含至少一个大写字母。',
+                passwordNumber: '密码必须包含至少一个数字。',
+                passwordSymbol: '密码必须包含至少一个特殊符号（例如 #, @, !）。',
+                logoutError: '注销错误',
+                failedToLogout: '注销失败。请重试。',
+                configurationError: '配置错误',
+                supabaseClientInitError: 'Supabase 客户端无法初始化。请检查脚本和您的 Supabase 项目详细信息。',
+                chatError: '聊天错误',
+                couldNotLoadChatHistory: '无法加载聊天记录。',
+                authenticationError: '身份验证错误',
+                notLoggedInSendMessage: '您未登录。请登录以发送消息。',
+                loadingChatHistory: '正在加载聊天记录...',
+                aidexThinking: 'Aidex 正在思考...',
+                backendConnectionError: "抱歉，无法连接到 Aidex 大脑。请确保后端服务器正在运行且没有网络问题。",
+                helpModalTitle: '帮助',
+                helpModalContent: '在此处查找常见问题解答和支持资源。',
+                emailNotificationsSaved: "电子邮件通知设置已保存（未实现）。",
+                pushNotificationsNotAvailable: "此浏览器不支持推送通知。",
+                chatHistorySaved: "聊天记录设置已保存（未实现）。",
+                exportingData: "正在导出数据（未实现）。",
+                twoFASetup: "2FA 设置尚未实现。",
+                loginHistoryView: "查看最近的登录活动。",
+                passwordChangeNotImplemented: "密码更改功能尚未实现。",
+                accountDeletionNotImplemented: "帐户删除功能尚未实现。",
+                aidexsName: "Aidex 的名字",
+                aidexNamePlaceholder: "例如：我的健康助手",
+                yourMedications: "您的药物",
+                medicationsPlaceholder: "列出您目前正在服用的任何药物...",
+                longTermHealthIssues: "长期健康问题",
+                healthIssuesPlaceholder: "例如：糖尿病、哮喘...",
+                enableChatPersonalization: "启用聊天个性化",
+                allowAidexPersonalization: "允许 Aidex 使用此信息来定制对话。",
+                appearance: "外观",
+                theme: "主题",
+                customizeLookFeel: "自定义应用程序的外观和感觉。",
+                light: "浅色",
+                dark: "深色",
+                interfaceLanguage: "界面语言",
+                chooseInterfaceLang: "选择菜单和按钮的语言。",
+                voice: "语音",
+                spokenLanguage: "口语",
+                languageVoiceInputOutput: "语音输入和输出的语言。",
+                voiceSelection: "语音",
+                chooseVoiceResponses: "选择语音回复的语音。",
+                enableVoiceOutput: "启用语音输出",
+                readResponsesAloud: "自动朗读回复。",
+                notifications: "通知",
+                emailNotifications: "电子邮件通知",
+                receiveUpdatesEmail: "通过电子邮件接收更新和摘要。",
+                pushNotifications: "推送通知",
+                "get AlertsDevice": "直接在您的设备上获取警报。",
+                dataControls: "数据控制",
+                chatHistory: "聊天记录",
+                rememberPastConversations: "允许 Aidex 记住过去的对话。",
+                exportYourData: "导出您的数据",
+                downloadCopyConversations: "下载您的对话副本。",
+                exportBtn: "导出",
+                security: "安全",
+                twoFactorAuthentication: "双因素认证 (2FA)",
+                addExtraSecurity: "为您的帐户添加一层额外的安全保护。",
+                setupBtn: "设置",
+                loginHistory: "登录历史记录",
+                reviewSignInActivity: "查看最近的登录活动。",
+                viewBtn: "查看",
+                account: "帐户",
+                changePassword: "更改密码",
+                updateAccountPassword: "更新您的帐户密码。",
+                changeBtn: "更改",
+                deleteAccount: "删除帐户",
+                permanentlyDelete: "永久删除您的帐户和所有数据。",
+                deleteBtn: "删除",
+                signInToAidex: "登录 Aidex",
+                email: "电子邮件",
+                password: "密码",
+                signInBtn: "登录",
+                dontHaveAccount: "没有帐户？",
+                signUpLink: "注册",
+                createAnAccount: "创建帐户",
+                signUpBtn: "注册",
+                alreadyHaveAccount: "已有帐户？",
+                signInLink: "登录",
+                listening: "正在听...",
+                chatFrom: "来自",
+                delete: "删除",
+                uploadingFile: "正在上传文件...",
+                fileUploadError: "文件上传错误",
+                fileTooLarge: "文件太大。最大大小为 5MB。",
+                fileUploadSuccess: "文件已成功上传以供分析。"
+            },
+            ja: {
+                aidex: 'Aidex',
+                newChat: '新しいチャット',
+                recentChats: '最近のチャット',
+                upgradePlan: 'プランをアップグレード',
+                customizeAidex: 'Aidexをカスタマイズ',
+                generalSettings: '一般設定',
+                help: 'ヘルプ',
+                logout: 'ログアウト',
+                describeSymptoms: '症状を説明してください...',
+                loginRequired: 'ログインが必要です',
+                pleaseLoginToUseVoice: '音声入力機能を使用するにはログインしてください。',
+                noSpeechDetected: '音声が検出されませんでした',
+                couldntHearAnything: "何も聞こえませんでした。もう一度お試しください。",
+                voiceInputError: '音声入力エラー',
+                anErrorOccurred: 'エラーが発生しました：',
+                speechSynthesisNotSupported: '音声合成はサポートされていません',
+                browserNoTTS: 'お使いのブラウザはテキスト読み上げをサポートしていません。',
+                loginError: 'ログインエラー',
+                signUpError: 'サインアップエラー',
+                success: '成功',
+                accountCreatedLoggedIn: 'アカウントが作成され、ログインしました！',
+                accountCreatedCheckEmail: 'アカウントが作成されました！ログインするための確認リンクが記載されたメールをご確認ください。',
+                unexpectedErrorSignUp: 'サインアップ中に予期せぬエラーが発生しました。',
+                passwordError: 'パスワードエラー',
+                passwordLengthMin: 'パスワードは{minLength}文字以上である必要があります。',
+                passwordLengthMax: 'パスワードは{maxLength}文字以下である必要があります。',
+                passwordUppercase: 'パスワードには少なくとも1つの大文字が含まれている必要があります。',
+                passwordNumber: 'パスワードには少なくとも1つの数字が含まれている必要があります。',
+                passwordSymbol: 'パスワードには少なくとも1つの特殊記号（例：#、@、!）が含まれている必要があります。',
+                logoutError: 'ログアウトエラー',
+                failedToLogout: 'ログアウトできませんでした。もう一度お試しください。',
+                configurationError: '設定エラー',
+                supabaseClientInitError: 'Supabaseクライアントを初期化できませんでした。スクリプトとSupabaseプロジェクトの詳細を確認してください。',
+                chatError: 'チャットエラー',
+                couldNotLoadChatHistory: 'チャット履歴を読み込めませんでした。',
+                authenticationError: '認証エラー',
+                notLoggedInSendMessage: 'ログインしていません。メッセージを送信するにはログインしてください。',
+                loadingChatHistory: 'チャット履歴を読み込み中...',
+                aidexThinking: 'Aidexが考えています...',
+                backendConnectionError: "申し訳ありません、Aidexの頭脳に接続できませんでした。バックエンドサーバーが実行されており、ネットワークに問題がないことを確認してください。",
+                helpModalTitle: 'ヘルプ',
+                helpModalContent: 'お困りですか？よくある質問とサポートリソースはこちらでご確認ください。',
+                emailNotificationsSaved: "メール通知設定が保存されました（未実装）。",
+                pushNotificationsNotAvailable: "このブラウザではプッシュ通知は利用できません。",
+                chatHistorySaved: "チャット履歴設定が保存されました（未実装）。",
+                exportingData: "データをエクスポートしています（未実装）。",
+                twoFASetup: "2FA設定はまだ実装されていません。",
+                loginHistoryView: "ログイン履歴の表示（未実装）。",
+                passwordChangeNotImplemented: "パスワード変更機能はまだ実装されていません。",
+                accountDeletionNotImplemented: "アカウント削除機能はまだ実装されていません。",
+                aidexsName: "Aidexの名前",
+                aidexNamePlaceholder: "例：私の健康アシスタント",
+                yourMedications: "あなたの薬",
+                medicationsPlaceholder: "現在服用中の薬をリストアップしてください...",
+                longTermHealthIssues: "長期的な健康問題",
+                healthIssuesPlaceholder: "例：糖尿病、喘息...",
+                enableChatPersonalization: "チャットのパーソナライズを有効にする",
+                allowAidexPersonalization: "Aidexがこの情報を使用して会話を調整できるようにします。",
+                appearance: "外観",
+                theme: "テーマ",
+                customizeLookFeel: "アプリの見た目をカスタマイズします。",
+                light: "ライト",
+                dark: "ダーク",
+                interfaceLanguage: "インターフェース言語",
+                chooseInterfaceLang: "メニューとボタンの言語を選択します。",
+                voice: "音声",
+                spokenLanguage: "話される言語",
+                languageVoiceInputOutput: "音声入力と出力の言語。",
+                voiceSelection: "音声",
+                chooseVoiceResponses: "音声応答の音声を選択します。",
+                enableVoiceOutput: "音声出力を有効にする",
+                readResponsesAloud: "応答を自動的に読み上げます。",
+                notifications: "通知",
+                emailNotifications: "メール通知",
+                receiveUpdatesEmail: "メールで更新と要約を受け取ります。",
+                pushNotifications: "プッシュ通知",
+                "get AlertsDevice": "デバイスで直接アラートを受け取ります。",
+                dataControls: "データ管理",
+                chatHistory: "チャット履歴",
+                rememberPastConversations: "Aidexが過去の会話を記憶できるようにします。",
+                exportYourData: "データをエクスポート",
+                downloadCopyConversations: "会話のコピーをダウンロードします。",
+                exportBtn: "エクスポート",
+                security: "セキュリティ",
+                twoFactorAuthentication: "2要素認証 (2FA)",
+                addExtraSecurity: "アカウントにセキュリティ層を追加します。",
+                setupBtn: "設定",
+                loginHistory: "ログイン履歴",
+                reviewSignInActivity: "最近のサインインアクティビティを確認します。",
+                viewBtn: "表示",
+                account: "アカウント",
+                changePassword: "パスワードを変更",
+                updateAccountPassword: "アカウントのパスワードを更新します。",
+                changeBtn: "変更",
+                deleteAccount: "アカウントを削除",
+                permanentlyDelete: "アカウントとすべてのデータを完全に削除します。",
+                deleteBtn: "削除",
+                signInToAidex: "Aidexにサインイン",
+                email: "メール",
+                password: "パスワード",
+                signInBtn: "サインイン",
+                dontHaveAccount: "アカウントをお持ちではありませんか？",
+                signUpLink: "サインアップ",
+                createAnAccount: "アカウントを作成",
+                signUpBtn: "サインアップ",
+                alreadyHaveAccount: "すでにアカウントをお持ちですか？",
+                signInLink: "サインイン",
+                listening: "聞いている...",
+                chatFrom: "からのチャット",
+                delete: "削除",
+                uploadingFile: "ファイルをアップロード中...",
+                fileUploadError: "ファイルのアップロードエラー",
+                fileTooLarge: "ファイルが大きすぎます。最大サイズは5MBです。",
+                fileUploadSuccess: "分析のためにファイルを正常にアップロードしました。"
+            },
+            ru: {
+                aidex: 'Aidex',
+                newChat: 'Новый чат',
+                recentChats: 'Недавние чаты',
+                upgradePlan: 'Обновить план',
+                customizeAidex: 'Настроить Aidex',
+                generalSettings: 'Общие настройки',
+                help: 'Помощь',
+                logout: 'Выйти',
+                describeSymptoms: 'Опишите свои симптомы...',
+                loginRequired: 'Требуется вход',
+                pleaseLoginToUseVoice: 'Пожалуйста, войдите, чтобы использовать функцию голосового ввода.',
+                noSpeechDetected: 'Речь не обнаружена',
+                couldntHearAnything: "Ничего не было слышно. Пожалуйста, попробуйте еще раз.",
+                voiceInputError: 'Ошибка голосового ввода',
+                anErrorOccurred: 'Произошла ошибка:',
+                speechSynthesisNotSupported: 'Синтез речи не поддерживается',
+                browserNoTTS: 'Ваш браузер не поддерживает преобразование текста в речь.',
+                loginError: 'Ошибка входа',
+                signUpError: 'Ошибка регистрации',
+                success: 'Успех',
+                accountCreatedLoggedIn: 'Аккаунт создан, и вы теперь вошли!',
+                accountCreatedCheckEmail: 'Аккаунт создан! Пожалуйста, проверьте свою электронную почту для получения ссылки подтверждения для входа.',
+                unexpectedErrorSignUp: 'При регистрации произошла непредвиденная ошибка.',
+                passwordError: 'Ошибка пароля',
+                passwordLengthMin: 'Пароль должен быть не менее {minLength} символов.',
+                passwordLengthMax: 'Пароль должен быть не более {maxLength} символов.',
+                passwordUppercase: 'Пароль должен содержать хотя бы одну заглавную букву.',
+                passwordNumber: 'Пароль должен содержать хотя бы одну цифру.',
+                passwordSymbol: 'Пароль должен содержать хотя бы один специальный символ (например, #, @, !).',
+                logoutError: 'Ошибка выхода',
+                failedToLogout: 'Не удалось выйти. Пожалуйста, попробуйте еще раз.',
+                configurationError: 'Ошибка конфигурации',
+                supabaseClientInitError: 'Не удалось инициализировать клиент Supabase. Пожалуйста, проверьте скрипт и данные вашего проекта Supabase.',
+                chatError: 'Ошибка чата',
+                couldNotLoadChatHistory: 'Не удалось загрузить историю чата.',
+                authenticationError: 'Ошибка аутентификации',
+                notLoggedInSendMessage: 'Вы не вошли. Пожалуйста, войдите, чтобы отправлять сообщения.',
+                loadingChatHistory: 'Загрузка истории чата...',
+                aidexThinking: 'Aidex думает...',
+                backendConnectionError: "Извините, не удалось подключиться к мозгу Aidex. Пожалуйста, убедитесь, что сервер бэкенда запущен и нет проблем с сетью.",
+                helpModalTitle: 'Помощь',
+                helpModalContent: 'Нужна помощь? Здесь вы найдете ответы на часто задаваемые вопросы и ресурсы поддержки.',
+                emailNotificationsSaved: "Настройки уведомлений по электронной почте сохранены (не реализовано).",
+                pushNotificationsNotAvailable: "Push-уведомления недоступны в этом браузере.",
+                chatHistorySaved: "Настройка истории чата сохранена (не реализовано).",
+                exportingData: "Экспорт данных (не реализовано).",
+                twoFASetup: "Настройка 2FA еще не реализована.",
+                loginHistoryView: "Просмотр истории входа (не реализовано).",
+                passwordChangeNotImplemented: "Функционал смены пароля еще не реализован.",
+                accountDeletionNotImplemented: "Функционал удаления учетной записи еще не реализован.",
+                aidexsName: "Имя Aidex",
+                aidexNamePlaceholder: "например, Мой помощник по здоровью",
+                yourMedications: "Ваши лекарства",
+                medicationsPlaceholder: "Перечислите все лекарства, которые вы сейчас принимаете...",
+                longTermHealthIssues: "Долгосрочные проблемы со здоровьем",
+                healthIssuesPlaceholder: "например, Диабет, Астма...",
+                enableChatPersonalization: "Включить персонализацию чата",
+                allowAidexPersonalization: "Разрешить Aidex использовать эту информацию для адаптации разговоров.",
+                appearance: "Внешний вид",
+                theme: "Тема",
+                customizeLookFeel: "Настройте внешний вид приложения.",
+                light: "Светлая",
+                dark: "Темная",
+                interfaceLanguage: "Язык интерфейса",
+                chooseInterfaceLang: "Выберите язык для меню и кнопок.",
+                voice: "Голос",
+                spokenLanguage: "Разговорный язык",
+                languageVoiceInputOutput: "Язык для голосового ввода и вывода.",
+                voiceSelection: "Голос",
+                chooseVoiceResponses: "Выберите голос для произносимых ответов.",
+                enableVoiceOutput: "Включить голосовой вывод",
+                readResponsesAloud: "Автоматически читать ответы вслух.",
+                notifications: "Уведомления",
+                emailNotifications: "Уведомления по электронной почте",
+                receiveUpdatesEmail: "Получайте обновления и сводки по электронной почте.",
+                pushNotifications: "Push-уведомления",
+                "get AlertsDevice": "Получайте оповещения прямо на свое устройство.",
+                dataControls: "Контроль данных",
+                chatHistory: "История чата",
+                rememberPastConversations: "Разрешить Aidex запоминать прошлые разговоры.",
+                exportYourData: "Экспортировать ваши данные",
+                downloadCopyConversations: "Загрузите копию своих разговоров.",
+                exportBtn: "Экспорт",
+                security: "Безопасность",
+                twoFactorAuthentication: "Двухфакторная аутентификация (2FA)",
+                addExtraSecurity: "Добавьте дополнительный уровень безопасности к вашей учетной записи.",
+                setupBtn: "Настроить",
+                loginHistory: "История входа",
+                reviewSignInActivity: "Просмотр истории входа (не реализовано).",
+                viewBtn: "Просмотр",
+                account: "Аккаунт",
+                changePassword: "Сменить пароль",
+                updateAccountPassword: "Обновите пароль своей учетной записи.",
+                changeBtn: "Изменить",
+                deleteAccount: "Удалить аккаунт",
+                permanentlyDelete: "Безвозвратно удалить свою учетную запись и все данные.",
+                deleteBtn: "Удалить",
+                signInToAidex: "Войти в Aidex",
+                email: "Электронная почта",
+                password: "Пароль",
+                signInBtn: "Войти",
+                dontHaveAccount: "Нет аккаунта?",
+                signUpLink: "Зарегистрироваться",
+                createAnAccount: "Создать аккаунт",
+                signUpBtn: "Зарегистрироваться",
+                alreadyHaveAccount: "Уже есть аккаунт?",
+                signInLink: "Войти",
+                listening: "Слушаю...",
+                chatFrom: "Чат от",
+                delete: "Удалить",
+                uploadingFile: "Загрузка файла...",
+                fileUploadError: "Ошибка загрузки файла",
+                fileTooLarge: "Файл слишком большой. Максимальный размер 5 МБ.",
+                fileUploadSuccess: "Файл успешно загружен для анализа."
+            },
+            ar: {
+                aidex: 'ايدكس',
+                newChat: 'دردشة جديدة',
+                recentChats: 'الدردشات الأخيرة',
+                upgradePlan: 'ترقية الخطة',
+                customizeAidex: 'تخصيص Aidex',
+                generalSettings: 'الاعدادات العامة',
+                help: 'مساعدة',
+                logout: 'تسجيل الخروج',
+                describeSymptoms: 'صف أعراضك...',
+                loginRequired: 'تسجيل الدخول مطلوب',
+                pleaseLoginToUseVoice: 'الرجاء تسجيل الدخول لاستخدام ميزة الإدخال الصوتي.',
+                noSpeechDetected: 'لم يتم اكتشاف كلام',
+                couldntHearAnything: "لم أسمع شيئًا. الرجاء المحاولة مرة أخرى.",
+                voiceInputError: 'خطأ في الإدخال الصوتي',
+                anErrorOccurred: 'حدث خطأ:',
+                speechSynthesisNotSupported: 'توليف الكلام غير مدعوم',
+                browserNoTTS: 'متصفحك لا يدعم تحويل النص إلى كلام.',
+                loginError: 'خطأ في تسجيل الدخول',
+                signUpError: 'خطأ في التسجيل',
+                success: 'نجاح',
+                accountCreatedLoggedIn: 'تم إنشاء الحساب وتم تسجيل دخولك الآن!',
+                accountCreatedCheckEmail: 'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني للحصول على رابط تأكيد لتسجيل الدخول.',
+                unexpectedErrorSignUp: 'حدث خطأ غير متوقع أثناء التسجيل.',
+                passwordError: 'خطأ في كلمة المرور',
+                passwordLengthMin: 'يجب أن تتكون كلمة المرور من {minLength} أحرف على الأقل.',
+                passwordLengthMax: 'يجب ألا تزيد كلمة المرور عن {maxLength} أحرف.',
+                passwordUppercase: 'يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل.',
+                passwordNumber: 'يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.',
+                passwordSymbol: 'يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل (مثل #، @، !).',
+                logoutError: 'خطأ في تسجيل الخروج',
+                failedToLogout: 'فشل تسجيل الخروج. الرجاء المحاولة مرة أخرى.',
+                configurationError: 'خطأ في التكوين',
+                supabaseClientInitError: 'تعذر تهيئة عميل Supabase. يرجى التحقق من البرنامج النصي وتفاصيل مشروع Supabase الخاص بك.',
+                chatError: 'خطأ في الدردشة',
+                couldNotLoadChatHistory: 'تعذر تحميل سجل الدردشة.',
+                authenticationError: 'خطأ في المصادقة',
+                notLoggedInSendMessage: 'لم تقم بتسجيل الدخول. الرجاء تسجيل الدخول لإرسال الرسائل.',
+                loadingChatHistory: 'جاري تحميل سجل الدردشة...',
+                aidexThinking: 'Aidex يفكر...',
+                backendConnectionError: "عذرًا، لم أتمكن من الاتصال بعقل Aidex. يرجى التأكد من أن الخادم الخلفي يعمل ولا توجد مشاكل في الشبكة.",
+                helpModalTitle: 'مساعدة',
+                helpModalContent: 'هل تحتاج إلى مساعدة؟ ابحث عن إجابات للأسئلة الشائعة وموارد الدعم هنا.',
+                emailNotificationsSaved: "تم حفظ إعدادات إشعارات البريد الإلكتروني (غير مطبقة).",
+                pushNotificationsNotAvailable: "إشعارات الدفع غير متوفرة في هذا المتصفح.",
+                chatHistorySaved: "تم حفظ إعداد سجل الدردشة (غير مطبق).",
+                exportingData: "جاري تصدير البيانات (غير مطبق).",
+                twoFASetup: "إعداد المصادقة الثنائية (2FA) لم يتم تنفيذه بعد.",
+                loginHistoryView: "عرض سجل الدخول (غير مطبق).",
+                passwordChangeNotImplemented: "لم يتم تنفيذ وظيفة تغيير كلمة المرور بعد.",
+                accountDeletionNotImplemented: "لم يتم تنفيذ وظيفة حذف الحساب بعد.",
+                aidexsName: "اسم Aidex",
+                aidexNamePlaceholder: "مثال: مساعدي الصحي",
+                yourMedications: "أدويتك",
+                medicationsPlaceholder: "اذكر أي أدوية تتناولها حاليًا...",
+                longTermHealthIssues: "مشاكل صحية طويلة الأمد",
+                healthIssuesPlaceholder: "مثال: السكري، الربو...",
+                enableChatPersonalization: "تمكين تخصيص الدردشة",
+                allowAidexPersonalization: "اسمح لـ Aidex باستخدام هذه المعلومات لتخصيص المحادثات.",
+                appearance: "المظهر",
+                theme: "السمة",
+                customizeLookFeel: "تخصيص شكل التطبيق ومظهره.",
+                light: "فاتح",
+                dark: "داكن",
+                interfaceLanguage: "لغة الواجهة",
+                chooseInterfaceLang: "اختر اللغة للقوائم والأزرار.",
+                voice: "الصوت",
+                spokenLanguage: "اللغة المنطوقة",
+                languageVoiceInputOutput: "اللغة للإدخال والإخراج الصوتي.",
+                voiceSelection: "الصوت",
+                chooseVoiceResponses: "اختر الصوت للاستجابات المنطوقة.",
+                enableVoiceOutput: "تمكين إخراج الصوت",
+                readResponsesAloud: "قراءة الردود بصوت عالٍ تلقائيًا.",
+                notifications: "الإشعارات",
+                emailNotifications: "إشعارات البريد الإلكتروني",
+                receiveUpdatesEmail: "تلقي التحديثات والملخصات عبر البريد الإلكتروني.",
+                pushNotifications: "إشعارات الدفع",
+                "get AlertsDevice": "احصل على تنبيهات مباشرة على جهازك.",
+                dataControls: "ضوابط البيانات",
+                chatHistory: "سجل الدردشة",
+                rememberPastConversations: "اسمح لـ Aidex بتذكر المحادثات السابقة.",
+                exportYourData: "تصدير بياناتك",
+                downloadCopyConversations: "تنزيل نسخة من محادثاتك.",
+                exportBtn: "تصدير",
+                security: "الأمان",
+                twoFactorAuthentication: "المصادقة الثنائية (2FA)",
+                addExtraSecurity: "أضف طبقة أمان إضافية لحسابك.",
+                setupBtn: "إعداد",
+                loginHistory: "سجل الدخول",
+                reviewSignInActivity: "مراجعة نشاط تسجيل الدخول الأخير.",
+                viewBtn: "عرض",
+                account: "الحساب",
+                changePassword: "تغيير كلمة المرور",
+                updateAccountPassword: "تحديث كلمة مرور حسابك.",
+                changeBtn: "تغيير",
+                deleteAccount: "حذف الحساب",
+                permanentlyDelete: "حذف حسابك وجميع البيانات بشكل دائم.",
+                deleteBtn: "حذف",
+                signInToAidex: "تسجيل الدخول إلى Aidex",
+                email: "البريد الإلكتروني",
+                password: "كلمة المرور",
+                signInBtn: "تسجيل الدخول",
+                dontHaveAccount: "ليس لديك حساب؟",
+                signUpLink: "إنشاء حساب",
+                createAnAccount: "إنشاء حساب",
+                signUpBtn: "إنشاء حساب",
+                alreadyHaveAccount: "هل لديك حساب بالفعل؟",
+                signInLink: "تسجيل الدخول",
+                listening: "جاري الاستماع...",
+                chatFrom: "دردشة من",
+                delete: "حذف",
+                uploadingFile: "جاري تحميل الملف...",
+                fileUploadError: "خطأ في تحميل الملف",
+                fileTooLarge: "الملف كبير جدًا. الحجم الأقصى هو 5 ميجابايت.",
+                fileUploadSuccess: "تم تحميل الملف بنجاح للتحليل."
+            },
+            te: {
+                aidex: 'ఎయిడెక్స్',
+                newChat: 'కొత్త చాట్',
+                recentChats: 'ఇటీవలి చాట్‌లు',
+                upgradePlan: 'ప్లాన్‌ను అప్‌గ్రేడ్ చేయండి',
+                customizeAidex: 'Aidexను అనుకూలీకరించండి',
+                generalSettings: 'సాధారణ సెట్టింగ్‌లు',
+                help: 'సహాయం',
+                logout: 'లాగ్ అవుట్',
+                describeSymptoms: 'మీ లక్షణాలను వివరించండి...',
+                loginRequired: 'లాగిన్ అవసరం',
+                pleaseLoginToUseVoice: 'వాయిస్ ఇన్‌పుట్ ఫీచర్‌ను ఉపయోగించడానికి దయచేసి లాగిన్ చేయండి.',
+                noSpeechDetected: 'మాట గుర్తించబడలేదు',
+                couldntHearAnything: "ఏమీ వినబడలేదు. దయచేసి మళ్లీ ప్రయత్నించండి。",
+                voiceInputError: 'వాయిస్ ఇన్‌పుట్ లోపం',
+                anErrorOccurred: 'లోపం సంభవించింది:',
+                speechSynthesisNotSupported: 'స్పీచ్ సింథసిస్ మద్దతు లేదు',
+                browserNoTTS: 'మీ బ్రౌజర్ టెక్స్ట్-టు-స్పీచ్‌కు మద్దతు ఇవ్వదు.',
+                loginError: 'లాగిన్ లోపం',
+                signUpError: 'సైన్ అప్ లోపం',
+                success: 'విజయం',
+                accountCreatedLoggedIn: 'ఖాతా సృష్టించబడింది మరియు మీరు ఇప్పుడు లాగిన్ అయ్యారు!',
+                accountCreatedCheckEmail: 'ఖాతా సృష్టించబడింది! లాగిన్ చేయడానికి దయచేసి మీ ఇమెయిల్‌లో నిర్ధారణ లింక్‌ను తనిఖీ చేయండి.',
+                unexpectedErrorSignUp: 'సైన్ అప్ సమయంలో ఊహించని లోపం సంభవించింది.',
+                passwordError: 'పాస్‌వర్డ్ లోపం',
+                passwordLengthMin: 'పాస్‌వర్డ్ కనీసం {minLength} అక్షరాల పొడవు ఉండాలి.',
+                passwordLengthMax: 'పాస్‌వర్డ్ {maxLength} అక్షరాల కంటే ఎక్కువ ఉండకూడదు.',
+                passwordUppercase: 'పాస్‌వర్డ్‌లో కనీసం ఒక పెద్ద అక్షరం ఉండాలి.',
+                passwordNumber: 'పాస్‌వర్డ్‌లో కనీసం ఒక సంఖ్య ఉండాలి.',
+                passwordSymbol: 'పాస్‌వర్డ్‌లో కనీసం ఒక ప్రత్యేక చిహ్నం (ఉదాహరణకు #, @, !) ఉండాలి.',
+                logoutError: 'లాగ్ అవుట్ లోపం',
+                failedToLogout: 'లాగ్ అవుట్ చేయడంలో విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.',
+                configurationError: 'కాన్ఫిగరేషన్ లోపం',
+                supabaseClientInitError: 'సుపాబేస్ క్లయింట్‌ను ప్రారంభించలేకపోయింది. దయచేసి స్క్రిప్ట్ మరియు మీ సుపాబేస్ ప్రాజెక్ట్ వివరాలను తనిఖీ చేయండి.',
+                chatError: 'చాట్ లోపం',
+                couldNotLoadChatHistory: 'చాట్ చరిత్రను లోడ్ చేయలేకపోయింది.',
+                authenticationError: 'ప్రామాణీకరణ లోపం',
+                notLoggedInSendMessage: 'మీరు లాగిన్ కాలేదు. సందేశాలు పంపడానికి దయచేసి లాగిన్ చేయండి.',
+                loadingChatHistory: 'చాట్ చరిత్ర లోడ్ అవుతోంది...',
+                aidexThinking: 'Aidex ఆలోచిస్తోంది...',
+                backendConnectionError: "క్షమించండి, నేను Aidex బ్రెయిన్‌కి కనెక్ట్ కాలేదు. దయచేసి బ్యాకెండ్ సర్వర్ నడుస్తుందని మరియు నెట్‌వర్క్ సమస్యలు లేవని నిర్ధారించుకోండి。",
+                helpModalTitle: 'సహాయం',
+                helpModalContent: 'సహాయం కావాలా? సాధారణ ప్రశ్నలకు సమాధానాలు మరియు మద్దతు వనరులను ఇక్కడ కనుగొనండి.',
+                emailNotificationsSaved: "ఇమెయిల్ నోటిఫికేషన్ సెట్టింగ్‌లు సేవ్ చేయబడ్డాయి (అమలు కాలేదు)。",
+                pushNotificationsNotAvailable: "ఈ బ్రౌజర్‌లో పుష్ నోటిఫికేషన్‌లు అందుబాటులో లేవు。",
+                chatHistorySaved: "చాట్ చరిత్ర సెట్టింగ్ సేవ్ చేయబడింది (అమలు కాలేదు)。",
+                exportingData: "డేటా ఎగుమతి అవుతోంది (అమలు కాలేదు)。",
+                twoFASetup: "2FA సెటప్ ఇంకా అమలు కాలేదు。",
+                loginHistoryView: "లాగిన్ చరిత్రను వీక్షించడం (అమలు కాలేదు)。",
+                passwordChangeNotImplemented: "పాస్‌వర్డ్ మార్పు కార్యాచరణ ఇంకా అమలు కాలేదు。",
+                accountDeletionNotImplemented: "ఖాతా తొలగింపు కార్యాచరణ ఇంకా అమలు కాలేదు。",
+                aidexsName: "ఎయిడెక్స్ పేరు",
+                aidexNamePlaceholder: "ఉదా: నా ఆరోగ్య సహాయకుడు",
+                yourMedications: "మీ మందులు",
+                medicationsPlaceholder: "మీరు ప్రస్తుతం తీసుకుంటున్న ఏవైనా మందులను జాబితా చేయండి...",
+                longTermHealthIssues: "దీర్ఘకాలిక ఆరోగ్య సమస్యలు",
+                healthIssuesPlaceholder: "ఉదా: మధుమేహం, ఉబ్బసం...",
+                enableChatPersonalization: "చాట్ వ్యక్తిగతీకరణను ప్రారంభించు",
+                allowAidexPersonalization: "సంభాషణలను రూపొందించడానికి Aidex ఈ సమాచారాన్ని ఉపయోగించడానికి అనుమతించండి。",
+                appearance: "స్వరూపం",
+                theme: "థీమ్",
+                customizeLookFeel: "యాప్ రూపాన్ని అనుకూలీకరించండి。",
+                light: "తేలికపాటి",
+                dark: "ముదురు",
+                interfaceLanguage: "ఇంటర్‌ఫేస్ భాష",
+                chooseInterfaceLang: "మెనూలు మరియు బటన్‌ల కోసం భాషను ఎంచుకోండి。",
+                voice: "వాయిస్",
+                spokenLanguage: "మాట్లాడే భాష",
+                languageVoiceInputOutput: "వాయిస్ ఇన్‌పుట్ మరియు అవుట్‌పుట్ కోసం భాష。",
+                voiceSelection: "వాయిస్",
+                chooseVoiceResponses: "మాట్లాడే ప్రతిస్పందనల కోసం వాయిస్‌ను ఎంచుకోండి。",
+                enableVoiceOutput: "వాయిస్ అవుట్‌పుట్‌ను ప్రారంభించు",
+                readResponsesAloud: "ప్రతిస్పందనలను స్వయంచాలకంగా బిగ్గరగా చదవండి。",
+                notifications: "నోటిఫికేషన్‌లు",
+                emailNotifications: "ఇమెయిల్ నోటిఫికేషన్‌లు",
+                receiveUpdatesEmail: "ఇమెయిల్ ద్వారా నవీకరణలు మరియు సారాంశాలను స్వీకరించండి。",
+                pushNotifications: "పుష్ నోటిఫికేషన్‌లు",
+                "get AlertsDevice": "మీ పరికరంలో నేరుగా హెచ్చరికలను పొందండి。",
+                dataControls: "డేటా నియంత్రణలు",
+                chatHistory: "చాట్ చరిత్ర",
+                rememberPastConversations: "మునుపటి సంభాషణలను Aidex గుర్తుంచుకోవడానికి అనుమతించండి。",
+                exportYourData: "మీ డేటాను ఎగుమతి చేయండి",
+                downloadCopyConversations: "మీ సంభాషణల కాపీని డౌన్‌లోడ్ చేయండి。",
+                exportBtn: "ఎగుమతి చేయండి",
+                security: "భద్రత",
+                twoFactorAuthentication: "రెండు-కారకాల ప్రమాణీకరణ (2FA)",
+                addExtraSecurity: "మీ ఖాతాకు అదనపు భద్రతను జోడించండి。",
+                setupBtn: "సెటప్ చేయండి",
+                loginHistory: "లాగిన్ చరిత్ర",
+                reviewSignInActivity: "ఇటీవలి సైన్-ఇన్ కార్యాచరణను సమీక్షించండి。",
+                viewBtn: "చూడండి",
+                account: "ఖాతా",
+                changePassword: "పాస్‌వర్డ్‌ను మార్చండి",
+                updateAccountPassword: "మీ ఖాతా పాస్‌వర్డ్‌ను నవీకరించండి。",
+                changeBtn: "మార్చండి",
+                deleteAccount: "ఖాతాను తొలగించు",
+                permanentlyDelete: "మీ ఖాతా మరియు అన్ని డేటాను శాశ్వతంగా తొలగించండి。",
+                deleteBtn: "తొలగించు",
+                signInToAidex: "ఎయిడెక్స్‌లోకి సైన్ ఇన్ చేయండి",
+                email: "ఇమెయిల్",
+                password: "పాస్‌వర్డ్",
+                signInBtn: "సైన్ ఇన్ చేయండి",
+                dontHaveAccount: "ఖాతా లేదా?",
+                signUpLink: "సైన్ అప్ చేయండి",
+                createAnAccount: "ఖాతాను సృష్టించండి",
+                signUpBtn: "సైన్ అప్ చేయండి",
+                alreadyHaveAccount: "ఇప్పటికే ఖాతా ఉందా?",
+                signInLink: "సైన్ ఇన్ చేయండి",
+                listening: "వినడం...",
+                chatFrom: "నుండి చాట్ చేయండి",
+                delete: "తొలగించు",
+                uploadingFile: "ఫైల్ అప్‌లోడ్ అవుతోంది...",
+                fileUploadError: "ఫైల్ అప్‌లోడ్ లోపం",
+                fileTooLarge: "ఫైల్ చాలా పెద్దది. గరిష్ట పరిమాణం 5MB.",
+                fileUploadSuccess: "విశ్లేషణ కోసం ఫైల్ విజయవంతంగా అప్‌లోడ్ చేయబడింది。"
+            }
+        };
+
+        // --- Custom Message Box (instead of alert()) ---
+        /**
+         * @brief Displays a custom message box to the user.
+         * @param {string} title - The title of the message box.
+         * @param {string} message - The content message.
+         * @param {string} type - Type of message ('info', 'error', 'warning').
+         */
+        function displayMessageBox(title, message, type = 'info') {
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+                z-index: 1000;
+            `;
+
+            // Create message box
+            const msgBox = document.createElement('div');
+            msgBox.style.cssText = `
+                background: white; padding: 25px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                max-width: 400px; text-align: center;
+            `;
+
+            // Title
+            const msgTitle = document.createElement('h3');
+            msgTitle.textContent = title;
+            msgTitle.style.color = '#333';
+            msgBox.appendChild(msgTitle);
+
+            // Message content
+            const msgContent = document.createElement('p');
+            msgContent.textContent = message;
+            msgContent.style.marginBottom = '20px';
+            msgBox.appendChild(msgContent);
+
+            // Close button
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'OK';
+            closeBtn.style.cssText = `
+                padding: 10px 20px; background-color: #007bff; color: white; border: none;
+                border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease;
+            `;
+            closeBtn.onmouseover = () => closeBtn.style.backgroundColor = '#0056b3';
+            closeBtn.onmouseout = () => closeBtn.style.backgroundColor = '#007bff';
+            closeBtn.onclick = () => document.body.removeChild(overlay);
+            msgBox.appendChild(closeBtn);
+
+            overlay.appendChild(msgBox);
+            document.body.appendChild(overlay);
+        }
+
+        function setLanguage(lang) {
+            const t = translations[lang];
+            if (!t) return;
+
+            // Update all UI elements with the new language
+            const aidexLogo = document.querySelector('[data-translate-key="aidex"]');
+            if (aidexLogo) aidexLogo.textContent = t.aidex;
+
+            const newChatSpan = document.querySelector('[data-translate-key="newChat"]');
+            if (newChatSpan) newChatSpan.textContent = t.newChat;
+
+            const recentChatsHeader = document.querySelector('[data-translate-key="recentChats"]');
+            if (recentChatsHeader) recentChatsHeader.textContent = t.recentChats;
+            
+            const upgradePlanBtn = document.getElementById('upgrade-plan-btn');
+            if (upgradePlanBtn) {
+                const upgradeSpan = upgradePlanBtn.querySelector('span');
+                if (upgradeSpan) {
+                    upgradeSpan.textContent = t.upgradePlan;
+                }
+            }
+            const customizeAidexLink = document.querySelector('[data-translate-key="customizeAidex"]');
+            if (customizeAidexLink) customizeAidexLink.textContent = t.customizeAidex;
+
+            const generalSettingsLink = document.querySelector('[data-translate-key="generalSettings"]');
+            if (generalSettingsLink) generalSettingsLink.textContent = t.generalSettings;
+
+            const helpLink = document.querySelector('[data-translate-key="help"]');
+            if (helpLink) helpLink.textContent = t.help;
+
+            const logoutLink = document.querySelector('[data-translate-key="logout"]');
+            if (logoutLink) logoutLink.textContent = t.logout;
+
+            // Ensure userInput exists before setting placeholder
+            if (userInput) {
+                userInput.placeholder = t.describeSymptoms;
+            }
+
+            // Update placeholder for login/signup forms if they are visible
+            const loginEmailInput = document.getElementById('login-email');
+            if (loginEmailInput) loginEmailInput.placeholder = t.email;
+            const loginPasswordInput = document.getElementById('login-password');
+            if (loginPasswordInput) loginPasswordInput.placeholder = t.password;
+            const signupEmailInput = document.getElementById('signup-email');
+            if (signupEmailInput) signupEmailInput.placeholder = t.email;
+            const signupPasswordInput = document.getElementById('signup-password');
+            if (signupPasswordInput) signupPasswordInput.placeholder = t.password;
+
+            // Update button texts for login/signup forms
+            const loginBtn = document.getElementById('login-button');
+            if (loginBtn) loginBtn.textContent = t.signInBtn;
+            const signupBtn = document.getElementById('signup-button');
+            if (signupBtn) signupBtn.textContent = t.signUpBtn;
+            const showSignupLink = document.getElementById('show-signup');
+            if (showSignupLink) showSignupLink.textContent = t.signUpLink;
+            const showLoginLink = document.getElementById('show-login');
+            if (showLoginLink) showLoginLink.textContent = t.signInLink;
+
+            // Auth page specific titles/messages
+            const signInTitle = document.querySelector('#login-form h2');
+            if (signInTitle) signInTitle.textContent = t.signInToAidex;
+            const signUpTitle = document.querySelector('#signup-form h2');
+            if (signUpTitle) signUpTitle.textContent = t.createAnAccount;
+            const dontHaveAccountText = document.querySelector('#login-form p span');
+            if (dontHaveAccountText) dontHaveAccountText.textContent = t.dontHaveAccount;
+            const alreadyHaveAccountText = document.querySelector('#signup-form p span');
+            if (alreadyHaveAccountText) alreadyHaveAccountText.textContent = t.alreadyHaveAccount;
+
+            // If settings modal is open, re-render its content to apply translations
+            if (customModal && customModal.classList.contains('show')) {
+                const currentActiveNav = settingsModalBody.querySelector('.settings-nav-item.active');
+                if (currentActiveNav && currentActiveNav.dataset.section) {
+                    const section = currentActiveNav.dataset.section;
+                    if (section === 'appearance-section' || section === 'voice-section' ||
+                        section === 'notifications-section' || section === 'data-controls-section' ||
+                        section === 'security-section' || section === 'account-section') {
+                        if (modalTitle) modalTitle.textContent = t.generalSettings;
+                        settingsModalBody.innerHTML = getGeneralSettingsHTML();
+                        attachGeneralSettingsListeners();
+                        document.querySelectorAll('.settings-nav-item').forEach(navItem => {
+                            if (navItem.dataset.section === section) {
+                                navItem.classList.add('active');
+                            } else {
+                                navItem.classList.remove('active');
+                            }
+                        });
+                        const activeSectionElement = document.getElementById(section);
+                        if (activeSectionElement) activeSectionElement.classList.add('active');
+                    } else if (modalTitle && modalTitle.textContent === translations['en'].customizeAidex) { // Check against English key to match
+                        modalTitle.textContent = t.customizeAidex;
+                        settingsModalBody.innerHTML = getCustomizeAidexHTML();
+                        attachCustomizeAidexListeners();
+                    }
+                }
+                // Update navigation item texts within the settings modal
+                const appearanceNavSpan = document.querySelector('.settings-nav [data-section="appearance-section"] span');
+                if (appearanceNavSpan) appearanceNavSpan.textContent = t.appearance;
+
+                const voiceNavSpan = document.querySelector('.settings-nav [data-section="voice-section"] span');
+                if (voiceNavSpan) voiceNavSpan.textContent = t.voice;
+
+                const notificationsNavSpan = document.querySelector('.settings-nav [data-section="notifications-section"] span');
+                if (notificationsNavSpan) notificationsNavSpan.textContent = t.notifications;
+
+                const dataControlsNavSpan = document.querySelector('.settings-nav [data-section="data-controls-section"] span');
+                if (dataControlsNavSpan) dataControlsNavSpan.textContent = t.dataControls;
+
+                const securityNavSpan = document.querySelector('.settings-nav [data-section="security-section"] span');
+                if (securityNavSpan) securityNavSpan.textContent = t.security;
+
+                const accountNavSpan = document.querySelector('.settings-nav [data-section="account-section"] span');
+                if (accountNavSpan) accountNavSpan.textContent = t.account;
+            }
+            // Re-render recent chats to apply language changes to chat titles and delete buttons
+            renderRecentChats();
+        }
+
+
+        // DOM Elements
+        const authPage = document.getElementById('auth-page');
+        const appContainer = document.getElementById('app-container');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const loginButton = document.getElementById('login-button');
+        const signupButton = document.getElementById('signup-button');
+        const showSignup = document.getElementById('show-signup');
+        const showLogin = document.getElementById('show-login');
+        const loginPasswordInput = document.getElementById('login-password');
+        const signupPasswordInput = document.getElementById('signup-password');
+        
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const micButton = document.getElementById('mic-button');
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('file-input');
+        const profileButton = document.getElementById('profile-button');
+        const profileDropdown = document.getElementById('profile-dropdown');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const userEmailDisplay = document.getElementById('user-email-display');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const recentChatsList = document.getElementById('recent-chats-list');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+
+        // Modal Elements
+        const customModal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const settingsModalBody = document.getElementById('settings-modal-body');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const modalOkButton = document.getElementById('modal-ok-button');
+
+        // Profile Dropdown Links
+        const customizeAidexLink = document.getElementById('customize-aidex-link');
+        const generalSettingsLink = document.getElementById('general-settings-link');
+        const helpLink = document.getElementById('help-link');
+        const logoutLink = document.getElementById('logout-link');
+
+        // Supabase variables
+        const supabaseUrl = 'https://bvyujwsmwyhbpxvbybba.supabase.co'; 
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2eXVqd3Ntd3loYnB4dmJ5YmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNDM1NjEsImV4cCI6MjA2NzgxOTU2MX0.oBFZCeBARMxL7Y3NpVfOJAstmN2fa4YWek-UEkyYVYI'; 
+        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+        let userId = 'anonymous';
+        let userEmail = 'Anonymous User';
+        let chatSubscription = null;
+        let recentChats = [];
+        let currentChatId = Date.now();
+
+        // Voice Assistant variables
+        let recognition;
+        let isListening = false;
+        let voiceOutputEnabled = true;
+        let currentUtterance = null; // To keep track of the current speech utterance
+
+        // Personalization variables (in-memory for now)
+        let aidexName = 'Aidex';
+        let medications = '';
+        let longTermHealthIssues = '';
+        let enableChatPersonalization = false;
+
+        // General Settings variables
+        let currentTheme = 'light';
+        let interfaceLanguage = 'en'; // Default language
+        let spokenLanguage = 'en-US';
+        let selectedVoice = null;
+
+        // Global variable for all voices, populated once
+        let allVoices = [];
+        let voicesForDropdown = [];
+
+        function populateVoices() {
+            allVoices = window.speechSynthesis.getVoices();
+            const englishVoices = allVoices.filter(voice => voice.lang.startsWith('en'));
+            const maleVoices = englishVoices.filter(voice => voice.name.toLowerCase().includes('male')).slice(0, 4);
+            const femaleVoices = englishVoices.filter(voice => voice.name.toLowerCase().includes('female')).slice(0, 4);
+            const otherEnglishVoices = englishVoices.filter(voice => !maleVoices.includes(voice) && !femaleVoices.includes(voice)).slice(0, 4);
+            voicesForDropdown = [...maleVoices, ...femaleVoices, ...otherEnglishVoices];
+            if (!selectedVoice && voicesForDropdown.length > 0) {
+                selectedVoice = voicesForDropdown.find(v => v.name.toLowerCase().includes('breeze')) || voicesForDropdown[0];
+            }
+        }
+
+        // --- Theme Management ---
+        function applyTheme(theme) {
+            currentTheme = theme;
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            const lightBtn = document.getElementById('theme-light-btn');
+            const darkBtn = document.getElementById('theme-dark-btn');
+            if (lightBtn && darkBtn) {
+                lightBtn.classList.toggle('active', theme === 'light');
+                darkBtn.classList.toggle('active', theme === 'dark');
+            }
+        }
+
+        // --- HTML Generation for Modals ---
+        function getCustomizeAidexHTML() {
+            const t = translations[interfaceLanguage];
+            return `
+                <div class="text-left w-full">
+                    <div class="mb-4">
+                        <label for="aidex-name" class="block mb-1 text-sm font-medium">${t.aidexsName}</label>
+                        <input type="text" id="aidex-name" class="p-2" placeholder="${t.aidexNamePlaceholder}" value="${aidexName}">
+                    </div>
+                    <div class="mb-4">
+                        <label for="medications" class="block mb-1 text-sm font-medium">${t.yourMedications}</label>
+                        <textarea id="medications" rows="2" class="p-2 w-full" placeholder="${t.medicationsPlaceholder}">${medications}</textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="health-issues" class="block mb-1 text-sm font-medium">${t.longTermHealthIssues}</label>
+                        <textarea id="health-issues" rows="2" class="p-2 w-full" placeholder="${t.healthIssuesPlaceholder}">${longTermHealthIssues}</textarea>
+                    </div>
+                    <div class="flex items-center justify-between">
+                            <div class="settings-item-text">
+                                <label>${t.enableChatPersonalization}</label>
+                                <span class="text-xs">${t.allowAidexPersonalization}</span>
+                            </div>
+                        <label class="switch">
+                            <input type="checkbox" id="enable-personalization" ${enableChatPersonalization ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getGeneralSettingsHTML() {
+            const t = translations[interfaceLanguage];
+            const voiceOptions = voicesForDropdown.map(voice => `<option value="${voice.name}" ${selectedVoice && selectedVoice.name === voice.name ? 'selected' : ''}>${voice.name} (${voice.lang})</option>`).join('');
+            return `
+                <div class="settings-nav">
+                    <a class="settings-nav-item active" data-section="appearance-section">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 1 0 10 10"/></svg>
+                        <span>${t.appearance}</span>
+                    </a>
+                    <a class="settings-nav-item" data-section="voice-section">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                        <span>${t.voice}</span>
+                    </a>
+                    <a class="settings-nav-item" data-section="notifications-section">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                        <span>${t.notifications}</span>
+                    </a>
+                    <a class="settings-nav-item" data-section="data-controls-section">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>${t.dataControls}</span>
+                    </a>
+                    <a class="settings-nav-item" data-section="security-section">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>${t.security}</span>
+                    </a>
+                    <a class="settings-nav-item" data-section="account-section">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>${t.account}</span>
+                    </a>
+                </div>
+                <div class="settings-content-area">
+                    <div id="appearance-section" class="settings-section active">
+                        <h4>${t.appearance}</h4>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.theme}</label>
+                                <span>${t.customizeLookFeel}</span>
+                            </div>
+                            <div class="theme-buttons flex rounded-lg" role="group">
+                                <button type="button" id="theme-light-btn" class="theme-btn rounded-l-lg ${currentTheme === 'light' ? 'active' : ''}">${t.light}</button>
+                                <button type="button" id="theme-dark-btn" class="theme-btn rounded-r-lg ${currentTheme === 'dark' ? 'active' : ''}">${t.dark}</button>
+                            </div>
+                        </div>
+                            <div class="settings-item">
+                                <div class="settings-item-text">
+                                    <label for="interface-language">${t.interfaceLanguage}</label>
+                                    <span>${t.chooseInterfaceLang}</span>
+                                </div>
+                                <select id="interface-language" class="w-1/2">
+                                    <option value="en">English</option>
+                                    <option value="es">Español</option>
+                                    <option value="hi">हिन्दी</option>
+                                    <option value="fr">Français</option>
+                                    <option value="de">Deutsch</option>
+                                    <option value="zh">中文</option>
+                                    <option value="ja">日本語</option>
+                                    <option value="ru">Русский</option>
+                                    <option value="ar">العربية</option>
+                                    <option value="te">తెలుగు</option>
+                                </select>
+                            </div>
+                    </div>
+                    <div id="voice-section" class="settings-section">
+                        <h4>${t.voice}</h4>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label for="spoken-language">${t.spokenLanguage}</label>
+                                <span>${t.languageVoiceInputOutput}</span>
+                            </div>
+                            <select id="spoken-language" class="w-1/2">
+                                <option value="en-US" ${spokenLanguage === 'en-US' ? 'selected' : ''}>English (US)</option>
+                            </select>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label for="voice-selection">${t.voiceSelection}</label>
+                                <span>${t.chooseVoiceResponses}</span>
+                            </div>
+                            <select id="voice-selection" class="w-1/2">
+                                ${voiceOptions}
+                            </select>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.enableVoiceOutput}</label>
+                                <span>${t.readResponsesAloud}</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="enable-voice-output" ${voiceOutputEnabled ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="notifications-section" class="settings-section">
+                        <h4>${t.notifications}</h4>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.emailNotifications}</label>
+                                <span>${t.receiveUpdatesEmail}</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="email-notifications-toggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.pushNotifications}</label>
+                                <span>${t["get AlertsDevice"]}</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="push-notifications-toggle" disabled>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="data-controls-section" class="settings-section">
+                        <h4>${t.dataControls}</h4>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.chatHistory}</label>
+                                <span>${t.rememberPastConversations}</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="chat-history-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.exportYourData}</label>
+                                <span>${t.downloadCopyConversations}</span>
+                            </div>
+                            <button id="export-data-btn" class="px-3 py-1 text-sm font-medium border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">${t.exportBtn}</button>
+                        </div>
+                    </div>
+                    <div id="security-section" class="settings-section">
+                        <h4>${t.security}</h4>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.twoFactorAuthentication}</label>
+                                <span>${t.addExtraSecurity}</span>
+                            </div>
+                            <button id="setup-2fa-btn" class="px-3 py-1 text-sm font-medium border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">${t.setupBtn}</button>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.loginHistory}</label>
+                                <span>${t.reviewSignInActivity}</span>
+                            </div>
+                            <button id="view-login-history-btn" class="px-3 py-1 text-sm font-medium border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">${t.viewBtn}</button>
+                        </div>
+                    </div>
+                    <div id="account-section" class="settings-section">
+                        <h4>${t.account}</h4>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.changePassword}</label>
+                                <span>${t.updateAccountPassword}</span>
+                            </div>
+                            <button id="change-password-btn" class="px-3 py-1 text-sm font-medium border rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">${t.changeBtn}</button>
+                        </div>
+                        <div class="settings-item">
+                            <div class="settings-item-text">
+                                <label>${t.deleteAccount}</label>
+                                <span class="text-red-600">${t.permanentlyDelete}</span>
+                            </div>
+                            <button id="delete-account-btn" class="px-3 py-1 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-lg hover:bg-red-700">${t.deleteBtn}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Utility Functions ---
+        function showModal(titleKey, content, isHtml = false, isSettings = false) {
+            const t = translations[interfaceLanguage];
+            if (modalTitle) modalTitle.textContent = t[titleKey] || titleKey;
+            if (settingsModalBody) settingsModalBody.innerHTML = '';
+            
+            if (isSettings) {
+                if (settingsModalBody) settingsModalBody.innerHTML = content;
+            } else if (isHtml) {
+                const wrapperDiv = document.createElement('div');
+                wrapperDiv.innerHTML = content;
+                if (settingsModalBody) settingsModalBody.appendChild(wrapperDiv);
+            } else {
+                const p = document.createElement('p');
+                p.textContent = content;
+                if (settingsModalBody) settingsModalBody.appendChild(p);
+            }
+            if (customModal) customModal.classList.add('show');
+        }
+
+        function hideModal() {
+            if (customModal) customModal.classList.remove('show');
+            if (modalOkButton) modalOkButton.onclick = hideModal;
+            if (modalCloseButton) modalCloseButton.onclick = hideModal;
+        }
+
+        function scrollToBottom() {
+            if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addMessageToUI(sender, text, rawText = '') { // Added rawText parameter
+            if (!chatContainer) return; // Ensure chatContainer exists
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender);
+
+            const avatarDiv = document.createElement('div');
+            avatarDiv.classList.add('avatar', sender);
+            if (sender === 'user') {
+                avatarDiv.textContent = 'You';
+            } else {
+                avatarDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z"/><path d="M9.09 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`;
+            }
+
+            const messageBubbleDiv = document.createElement('div');
+            messageBubbleDiv.classList.add('message-bubble');
+
+            if (sender === 'ai') {
+                messageBubbleDiv.innerHTML = marked.parse(text);
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'feedback-buttons';
+                // Updated SVG icons for feedback and speak
+                feedbackDiv.innerHTML = `
+                    <button class="feedback-btn" title="Good response">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 10v12l3-3 3 3V10c0-1.7-1.3-3-3-3H7zM17 10V2l-3 3-3-3V10c0 1.7 1.3 3 3 3h4z"/>
+                        </svg>
+                    </button>
+                    <button class="feedback-btn" title="Bad response">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 14V2l-3 3-3-3V14c0 1.7 1.3 3 3 3h4zM7 14V22l3-3 3 3V14c0-1.7-1.3-3-3-3H7z"/>
+                        </svg>
+                    </button>
+                    <button class="speak-btn" title="Read aloud" data-text="${rawText}">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M23.31 1.69a16 16 0 0 1 0 20.62"></path>
+                        </svg>
+                    </button>
+                `;
+                messageBubbleDiv.appendChild(feedbackDiv);
+                feedbackDiv.querySelectorAll('.feedback-btn').forEach(btn => {
+                    btn.addEventListener('click', () => displayMessageBox("Feedback", "Thank you for your feedback!"));
+                });
+                // Add event listener for the new speak button
+                const speakBtn = feedbackDiv.querySelector('.speak-btn');
+                if (speakBtn) {
+                    speakBtn.addEventListener('click', (e) => {
+                        const textToSpeak = e.currentTarget.dataset.text;
+                        if (textToSpeak) {
+                            toggleSpeakText(textToSpeak); // Use toggleSpeakText
+                        }
+                    });
+                }
+            } else {
+                messageBubbleDiv.textContent = text;
+            }
+
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(messageBubbleDiv);
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        let loadingIndicator = null;
+        function showLoadingIndicator(textKey = 'aidexThinking') {
+            const t = translations[interfaceLanguage];
+            const text = t[textKey] || textKey;
+            if (loadingIndicator) return;
+            loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('loading-indicator');
+            loadingIndicator.textContent = text;
+            if (chatContainer) chatContainer.appendChild(loadingIndicator);
+            scrollToBottom();
+        }
+
+        function hideLoadingIndicator() {
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+                loadingIndicator = null;
+            }
+        }
+
+        // --- Supabase Functions ---
+        async function initializeSupabase() {
+            if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('YOUR_SUPABASE_URL') || !supabaseClient) {
+                displayMessageBox("configurationError", translations[interfaceLanguage].supabaseClientInitError);
+                if (authPage) authPage.classList.remove('hidden');
+                return;
+            }
+
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                const user = session?.user;
+                if (user) {
+                    userId = user.id;
+                    userEmail = user.email;
+                    if (userIdDisplay) userIdDisplay.textContent = `User ID: ${userId}`;
+                    if (userEmailDisplay) userEmailDisplay.textContent = userEmail;
+                    
+                    if (authPage) authPage.classList.add('hidden');
+                    if (appContainer) {
+                        appContainer.classList.remove('hidden');
+                        appContainer.style.display = 'flex';
+                    }
+
+
+                    listenForChatMessages();
+                } else {
+                    userId = 'anonymous';
+                    userEmail = 'Anonymous User';
+                    if (userIdDisplay) userIdDisplay.textContent = '';
+                    if (userEmailDisplay) userEmailDisplay.textContent = 'Anonymous User';
+                    
+                    if (appContainer) appContainer.classList.add('hidden');
+                    if (authPage) authPage.classList.remove('hidden');
+
+                    if(chatSubscription) {
+                        chatSubscription.unsubscribe();
+                        chatSubscription = null;
+                    }
+                }
+            });
+
+            // Check initial session to decide which page to show
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                if (authPage) authPage.classList.remove('hidden');
+                if (appContainer) appContainer.classList.add('hidden');
+            }
+        }
+
+        async function fetchInitialMessages() {
+            showLoadingIndicator('loadingChatHistory');
+            const { data: messages, error } = await supabaseClient
+                .from('aidex_chats')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            hideLoadingIndicator();
+            if (error) {
+                console.error('Error fetching messages:', error);
+                displayMessageBox("chatError", translations[interfaceLanguage].couldNotLoadChatHistory);
+                return;
+            }
+
+            if (chatContainer) chatContainer.innerHTML = ``; // Clear existing messages
+            addMessageToUI('ai', translations[interfaceLanguage].helloAidexWelcome, translations[interfaceLanguage].helloAidexWelcome); // Pass raw text
+            
+            messages.forEach(msg => {
+                // Assuming msg.content is an array of strings, join it for display
+                const contentText = Array.isArray(msg.content) ? msg.content.join(' ') : msg.content;
+                addMessageToUI(msg.sender, contentText, contentText); // Pass raw text
+            });
+        }
+
+        function listenForChatMessages() {
+            if (chatSubscription) return;
+
+            fetchInitialMessages();
+
+            chatSubscription = supabaseClient
+                .channel('public:aidex_chats')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'aidex_chats' }, payload => {
+                    const newMessage = payload.new;
+                    if (newMessage.user_id !== userId) {
+                         // Assuming newMessage.content is an array of strings, join it for display
+                        const contentText = Array.isArray(newMessage.content) ? newMessage.content.join(' ') : newMessage.content;
+                        addMessageToUI(newMessage.sender, contentText, contentText); // Pass raw text
+                    }
+                })
+                .subscribe();
+        }
+
+        async function saveMessageToSupabase(sender, text) {
+            console.log(`Attempting to save message: sender=${sender}, text=${text}`);
+            const { data: { user } } = await supabaseClient.auth.getUser();
+
+            if (!user) {
+                displayMessageBox("authenticationError", translations[interfaceLanguage].notLoggedInSendMessage);
+                return;
+            }
+            
+            // Ensure text is a string and wrap it in an array for Supabase column expecting array literal
+            const contentToSave = String(text); 
+            console.log(`Content to save (stringified and array-wrapped): [${contentToSave}]`);
+
+            const { error } = await supabaseClient
+                .from('aidex_chats')
+                .insert([{ content: [contentToSave], sender: sender, user_id: user.id }]); // Changed to [contentToSave]
+
+            if (error) {
+                console.error('Error saving message:', error.message);
+            } else {
+                console.log('Message saved successfully to Supabase.');
+            }
+        }
+
+        // --- Main Send Message Logic ---
+        async function sendMessage(isVoiceInput = false, fileData = null) { // Added fileData parameter
+            const prompt = userInput.value.trim();
+            if (prompt === '' && !fileData) return; // Allow sending only file
+
+            let messageContent = prompt;
+            let payload = { 
+                message: prompt, 
+                session_id: userId,
+                language: interfaceLanguage
+            };
+
+            if (fileData) {
+                messageContent = `[File: ${fileData.name}, Type: ${fileData.type}]`;
+                payload.file = {
+                    name: fileData.name, // Corrected from file.name
+                    type: file.type, // Corrected from file.type
+                    data: fileData.data // Base64 encoded data
+                };
+            }
+
+            addMessageToUI('user', messageContent);
+            await saveMessageToSupabase('user', messageContent);
+            
+            if (userInput) {
+                userInput.value = '';
+                userInput.style.height = 'auto';
+            }
+            if (sendButton) sendButton.classList.add('hidden');
+            if (fileInput) fileInput.value = ''; // Clear file input after sending
+
+            showLoadingIndicator(fileData ? 'uploadingFile' : 'aidexThinking'); // Different loading text for file upload
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || `Backend error: ${response.statusText}`);
+                }
+                const data = await response.json();
+                const aiResponseText = data.reply;
+
+                hideLoadingIndicator();
+                
+                if (aiResponseText) {
+                    addMessageToUI('ai', aiResponseText, aiResponseText); // Pass raw text
+                    await saveMessageToSupabase('ai', aiResponseText);
+                    if (isVoiceInput && voiceOutputEnabled) speakText(aiResponseText);
+                } else {
+                    addMessageToUI('ai', "I'm sorry, I encountered an error and couldn't get a response.", "I'm sorry, I encountered an error and couldn't get a response."); // Fallback, pass raw text
+                }
+
+            } catch (error) {
+                console.error("Error calling backend:", error);
+                hideLoadingIndicator();
+                addMessageToUI('ai', translations[interfaceLanguage].backendConnectionError, translations[interfaceLanguage].backendConnectionError); // Pass raw text
+            }
+        }
+
+        // --- Voice Assistant Functions ---
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                if (micButton) micButton.style.display = 'none';
+                return;
+            }
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = spokenLanguage;
+            recognition.onstart = () => {
+                isListening = true;
+                if (micButton) micButton.classList.add('microphone-active');
+                if (userInput) userInput.placeholder = translations[interfaceLanguage].listening;
+            };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                if (userInput) {
+                    userInput.value = transcript;
+                    userInput.style.height = 'auto';
+                    userInput.style.height = userInput.scrollHeight + 'px';
+                }
+                if (sendButton) sendButton.classList.remove('hidden');
+                sendMessage(true);
+            };
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                if (event.error === 'no-speech') {
+                    displayMessageBox("noSpeechDetected", translations[interfaceLanguage].couldntHearAnything);
+                } else if (event.error === 'not-allowed') {
+                    // This is a common case, don't show a modal unless it's the first time
+                } else {
+                    displayMessageBox("voiceInputError", `${translations[interfaceLanguage].anErrorOccurred} ${event.error}`);
+                }
+                isListening = false;
+                if (micButton) micButton.classList.remove('microphone-active');
+                if (userInput) userInput.placeholder = translations[interfaceLanguage].describeSymptoms;
+            };
+            recognition.onend = () => {
+                isListening = false;
+                if (micButton) micButton.classList.remove('microphone-active');
+                if (userInput) userInput.placeholder = translations[interfaceLanguage].describeSymptoms;
+            };
+        }
+
+        function toggleSpeechRecognition() {
+            if (!userId || userId === 'anonymous') {
+                displayMessageBox("loginRequired", translations[interfaceLanguage].pleaseLoginToUseVoice);
+                return;
+            }
+            if (isListening) {
+                recognition.stop();
+            } else {
+                if (userInput) userInput.value = '';
+                if (sendButton) sendButton.classList.add('hidden');
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.error("Could not start recognition: ", e);
+                }
+            }
+        }
+
+        function speakText(text, voice = selectedVoice) {
+            if (!voiceOutputEnabled) return;
+            if ('speechSynthesis' in window) {
+                // Stop any ongoing speech before starting a new one
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                }
+
+                const cleanText = text.replace(/(\*\*|---|#)/g, '');
+                currentUtterance = new SpeechSynthesisUtterance(cleanText);
+                if (voice) {
+                    currentUtterance.voice = voice;
+                    currentUtterance.lang = voice.lang;
+                } else {
+                    currentUtterance.lang = spokenLanguage;
+                }
+                window.speechSynthesis.speak(currentUtterance);
+            } else {
+                displayMessageBox("speechSynthesisNotSupported", translations[interfaceLanguage].browserNoTTS);
+            }
+        }
+
+        function toggleSpeakText(text) {
+            if ('speechSynthesis' in window) {
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel(); // Stop current speech
+                } else {
+                    speakText(text); // Start speaking
+                }
+            } else {
+                displayMessageBox("speechSynthesisNotSupported", translations[interfaceLanguage].browserNoTTS);
+            }
+        }
+        
+        // --- Password Validation ---
+        function validatePassword(password) {
+            const t = translations[interfaceLanguage];
+            const minLength = 8;
+            const maxLength = 20;
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSymbol = /[#@!$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+            if (password.length < minLength) return t.passwordLengthMin.replace('{minLength}', minLength);
+            if (password.length > maxLength) return t.passwordLengthMax.replace('{maxLength}', maxLength);
+            if (!hasUpperCase) return t.passwordUppercase;
+            if (!hasNumber) return t.passwordNumber;
+            if (!hasSymbol) return t.passwordSymbol;
+            return null;
+        }
+        
+        // --- Settings Event Handlers ---
+        function attachCustomizeAidexListeners() {
+            const t = translations[interfaceLanguage];
+
+            const aidexNameInput = document.getElementById('aidex-name');
+            if (aidexNameInput) {
+                const prevSibling = aidexNameInput.previousElementSibling;
+                if (prevSibling) prevSibling.textContent = t.aidexsName;
+                aidexNameInput.placeholder = t.aidexNamePlaceholder;
+                aidexNameInput.value = aidexName;
+            }
+
+            const medicationsTextarea = document.getElementById('medications');
+            if (medicationsTextarea) {
+                const prevSibling = medicationsTextarea.previousElementSibling;
+                if (prevSibling) prevSibling.textContent = t.yourMedications;
+                medicationsTextarea.placeholder = t.medicationsPlaceholder;
+                medicationsTextarea.value = medications;
+            }
+
+            const healthIssuesTextarea = document.getElementById('health-issues');
+            if (healthIssuesTextarea) {
+                const prevSibling = healthIssuesTextarea.previousElementSibling;
+                if (prevSibling) prevSibling.textContent = t.longTermHealthIssues;
+                healthIssuesTextarea.placeholder = t.healthIssuesPlaceholder;
+                healthIssuesTextarea.value = longTermHealthIssues;
+            }
+
+            const enablePersonalizationToggle = document.querySelector('#enable-personalization');
+            if (enablePersonalizationToggle) {
+                const parentSettingsItem = enablePersonalizationToggle.closest('.settings-item');
+                if (parentSettingsItem) {
+                    const label = parentSettingsItem.querySelector('label');
+                    const span = parentSettingsItem.querySelector('span');
+                    if (label) label.textContent = t.enableChatPersonalization;
+                    if (span) span.textContent = t.allowAidexPersonalization;
+                }
+            }
+
+
+            if (aidexNameInput) aidexNameInput.addEventListener('input', (e) => aidexName = e.target.value);
+            if (medicationsTextarea) medicationsTextarea.addEventListener('input', (e) => medications = e.target.value);
+            if (healthIssuesTextarea) healthIssuesTextarea.addEventListener('input', (e) => longTermHealthIssues = e.target.value);
+            if (enablePersonalizationToggle) enablePersonalizationToggle.addEventListener('change', (e) => enableChatPersonalization = e.target.checked);
+        }
+
+        function attachGeneralSettingsListeners() {
+            const t = translations[interfaceLanguage];
+
+            // Update navigation item texts
+            const appearanceNavSpan = document.querySelector('.settings-nav [data-section="appearance-section"] span');
+            if (appearanceNavSpan) appearanceNavSpan.textContent = t.appearance;
+
+            const voiceNavSpan = document.querySelector('.settings-nav [data-section="voice-section"] span');
+            if (voiceNavSpan) voiceNavSpan.textContent = t.voice;
+
+            const notificationsNavSpan = document.querySelector('.settings-nav [data-section="notifications-section"] span');
+            if (notificationsNavSpan) notificationsNavSpan.textContent = t.notifications;
+
+            const dataControlsNavSpan = document.querySelector('.settings-nav [data-section="data-controls-section"] span');
+            if (dataControlsNavSpan) dataControlsNavSpan.textContent = t.dataControls;
+
+            const securityNavSpan = document.querySelector('.settings-nav [data-section="security-section"] span');
+            if (securityNavSpan) securityNavSpan.textContent = t.security;
+
+            const accountNavSpan = document.querySelector('.settings-nav [data-section="account-section"] span');
+            if (accountNavSpan) accountNavSpan.textContent = t.account;
+
+            // Navigation
+            document.querySelectorAll('.settings-nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const targetSectionId = e.currentTarget.dataset.section;
+                    
+                    document.querySelectorAll('.settings-nav-item').forEach(nav => nav.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    
+                    document.querySelectorAll('.settings-section').forEach(section => section.classList.remove('active'));
+                    const activeSectionElement = document.getElementById(targetSectionId);
+                    if (activeSectionElement) activeSectionElement.classList.add('active');
+                    const sectionTitle = document.querySelector(`#${targetSectionId} h4`);
+                    if (sectionTitle) sectionTitle.textContent = t[targetSectionId.replace('-section', '')];
+                });
+            });
+
+            // Appearance Section
+            const appearanceSection = document.getElementById('appearance-section');
+            if (appearanceSection) {
+                const h4 = appearanceSection.querySelector('h4');
+                if (h4) h4.textContent = t.appearance;
+                const themeItemLabel = appearanceSection.querySelector('.settings-item:nth-child(2) label');
+                if (themeItemLabel) themeItemLabel.textContent = t.theme;
+                const themeItemSpan = appearanceSection.querySelector('.settings-item:nth-child(2) span');
+                if (themeItemSpan) themeItemSpan.textContent = t.customizeLookFeel;
+                
+                // Ensure buttons are updated
+                const lightBtn = appearanceSection.querySelector('#theme-light-btn');
+                const darkBtn = appearanceSection.querySelector('#theme-dark-btn');
+                if (lightBtn) lightBtn.textContent = t.light;
+                if (darkBtn) darkBtn.textContent = t.dark;
+                
+                const interfaceLangLabel = appearanceSection.querySelector('.settings-item:nth-child(3) label');
+                if (interfaceLangLabel) interfaceLangLabel.textContent = t.interfaceLanguage;
+                const interfaceLangSpan = appearanceSection.querySelector('.settings-item:nth-child(3) span');
+                if (interfaceLangSpan) interfaceLangSpan.textContent = t.chooseInterfaceLang;
+            }
+
+
+            // Voice Section
+            const voiceSection = document.getElementById('voice-section');
+            if (voiceSection) {
+                const h4 = voiceSection.querySelector('h4');
+                if (h4) h4.textContent = t.voice;
+                const spokenLangLabel = voiceSection.querySelector('.settings-item:nth-child(2) label');
+                if (spokenLangLabel) spokenLangLabel.textContent = t.spokenLanguage;
+                const spokenLangSpan = voiceSection.querySelector('.settings-item:nth-child(2) span');
+                if (spokenLangSpan) spokenLangSpan.textContent = t.languageVoiceInputOutput;
+                const voiceSelectionLabel = voiceSection.querySelector('.settings-item:nth-child(3) label');
+                if (voiceSelectionLabel) voiceSelectionLabel.textContent = t.voiceSelection;
+                const voiceSelectionSpan = voiceSection.querySelector('.settings-item:nth-child(3) span');
+                if (voiceSelectionSpan) voiceSelectionSpan.textContent = t.chooseVoiceResponses;
+                const enableVoiceOutputLabel = voiceSection.querySelector('.settings-item:nth-child(4) label');
+                if (enableVoiceOutputLabel) enableVoiceOutputLabel.textContent = t.enableVoiceOutput;
+                const enableVoiceOutputSpan = voiceSection.querySelector('.settings-item:nth-child(4) span');
+                if (enableVoiceOutputSpan) enableVoiceOutputSpan.textContent = t.readResponsesAloud;
+            }
+
+            // Notifications Section
+            const notificationsSection = document.getElementById('notifications-section');
+            if (notificationsSection) {
+                const h4 = notificationsSection.querySelector('h4');
+                if (h4) h4.textContent = t.notifications;
+                const emailNotifLabel = notificationsSection.querySelector('.settings-item:nth-child(2) label');
+                if (emailNotifLabel) emailNotifLabel.textContent = t.emailNotifications;
+                const emailNotifSpan = notificationsSection.querySelector('.settings-item:nth-child(2) span');
+                if (emailNotifSpan) emailNotifSpan.textContent = t.receiveUpdatesEmail;
+                const pushNotifLabel = notificationsSection.querySelector('.settings-item:nth-child(3) label');
+                if (pushNotifLabel) pushNotifLabel.textContent = t.pushNotifications;
+                const pushNotifSpan = notificationsSection.querySelector('.settings-item:nth-child(3) span');
+                if (pushNotifSpan) pushNotifSpan.textContent = t["get AlertsDevice"];
+            }
+
+            // Data Controls Section
+            const dataControlsSection = document.getElementById('data-controls-section');
+            if (dataControlsSection) {
+                const h4 = dataControlsSection.querySelector('h4');
+                if (h4) h4.textContent = t.dataControls;
+                const chatHistoryLabel = dataControlsSection.querySelector('.settings-item:nth-child(2) label');
+                if (chatHistoryLabel) chatHistoryLabel.textContent = t.chatHistory;
+                const chatHistorySpan = dataControlsSection.querySelector('.settings-item:nth-child(2) span');
+                if (chatHistorySpan) chatHistorySpan.textContent = t.rememberPastConversations;
+                const exportDataLabel = dataControlsSection.querySelector('.settings-item:nth-child(3) label');
+                if (exportDataLabel) exportDataLabel.textContent = t.exportYourData;
+                const exportDataSpan = dataControlsSection.querySelector('.settings-item:nth-child(3) span');
+                if (exportDataSpan) exportDataSpan.textContent = t.downloadCopyConversations;
+                const exportBtn = dataControlsSection.querySelector('#export-data-btn');
+                if (exportBtn) exportBtn.textContent = t.exportBtn;
+            }
+
+            // Security Section
+            const securitySection = document.getElementById('security-section');
+            if (securitySection) {
+                const h4 = securitySection.querySelector('h4');
+                if (h4) h4.textContent = t.security;
+                const twoFALabel = securitySection.querySelector('.settings-item:nth-child(2) label');
+                if (twoFALabel) twoFALabel.textContent = t.twoFactorAuthentication;
+                const twoFASpan = securitySection.querySelector('.settings-item:nth-child(2) span');
+                if (twoFASpan) twoFASpan.textContent = t.addExtraSecurity;
+                const setup2FABtn = securitySection.querySelector('#setup-2fa-btn');
+                if (setup2FABtn) setup2FABtn.textContent = t.setupBtn;
+                const loginHistoryLabel = securitySection.querySelector('.settings-item:nth-child(3) label');
+                if (loginHistoryLabel) loginHistoryLabel.textContent = t.loginHistory;
+                const loginHistorySpan = securitySection.querySelector('.settings-item:nth-child(3) span');
+                if (loginHistorySpan) loginHistorySpan.textContent = t.reviewSignInActivity;
+                const viewLoginHistoryBtn = securitySection.querySelector('#view-login-history-btn');
+                if (viewLoginHistoryBtn) viewLoginHistoryBtn.textContent = t.viewBtn;
+            }
+
+            // Account Section
+            const accountSection = document.getElementById('account-section');
+            if (accountSection) {
+                const h4 = accountSection.querySelector('h4');
+                if (h4) h4.textContent = t.account;
+                const changePasswordLabel = accountSection.querySelector('.settings-item:nth-child(2) label');
+                if (changePasswordLabel) changePasswordLabel.textContent = t.changePassword;
+                const changePasswordSpan = accountSection.querySelector('.settings-item:nth-child(2) span');
+                if (changePasswordSpan) changePasswordSpan.textContent = t.updateAccountPassword;
+                const changePasswordBtn = accountSection.querySelector('#change-password-btn');
+                if (changePasswordBtn) changePasswordBtn.textContent = t.changeBtn;
+                const deleteAccountLabel = accountSection.querySelector('.settings-item:nth-child(3) label');
+                if (deleteAccountLabel) deleteAccountLabel.textContent = t.deleteAccount;
+                const permanentlyDeleteSpan = accountSection.querySelector('.settings-item:nth-child(3) span');
+                if (permanentlyDeleteSpan) permanentlyDeleteSpan.textContent = t.permanentlyDelete;
+                const deleteAccountBtn = document.getElementById('delete-account-btn');
+                if (deleteAccountBtn) deleteAccountBtn.textContent = t.deleteBtn;
+            }
+
+
+            // Theme
+            const themeLightBtn = document.getElementById('theme-light-btn');
+            if (themeLightBtn) themeLightBtn.addEventListener('click', () => applyTheme('light'));
+            const themeDarkBtn = document.getElementById('theme-dark-btn');
+            if (themeDarkBtn) themeDarkBtn.addEventListener('click', () => applyTheme('dark'));
+
+            // Language
+            const interfaceLanguageSelect = document.getElementById('interface-language');
+            if (interfaceLanguageSelect) {
+                interfaceLanguageSelect.value = interfaceLanguage;
+                interfaceLanguageSelect.addEventListener('change', (e) => {
+                    interfaceLanguage = e.target.value;
+                    setLanguage(interfaceLanguage);
+                });
+            }
+
+            // Spoken Language (for recognition.lang)
+            const spokenLanguageSelect = document.getElementById('spoken-language');
+            if (spokenLanguageSelect) {
+                spokenLanguageSelect.value = spokenLanguage;
+                spokenLanguageSelect.addEventListener('change', (e) => {
+                    spokenLanguage = e.target.value;
+                    if (recognition) {
+                        recognition.lang = spokenLanguage;
+                    }
+                });
+            }
+
+            // Voice settings
+            const enableVoiceOutputToggle = document.getElementById('enable-voice-output');
+            if (enableVoiceOutputToggle) {
+                enableVoiceOutputToggle.checked = voiceOutputEnabled;
+                enableVoiceOutputToggle.addEventListener('change', e => voiceOutputEnabled = e.target.checked);
+            }
+            
+            const voiceSelectionDropdown = document.getElementById('voice-selection');
+            if (voiceSelectionDropdown) {
+                voiceSelectionDropdown.value = selectedVoice ? selectedVoice.name : '';
+                voiceSelectionDropdown.addEventListener('change', e => {
+                    selectedVoice = allVoices.find(voice => voice.name === e.target.value);
+                });
+            }
+
+            // Notifications (alerts use translated strings directly)
+            const emailNotificationsToggle = document.getElementById('email-notifications-toggle');
+            if (emailNotificationsToggle) emailNotificationsToggle.addEventListener('click', () => displayMessageBox("Email Notifications", t.emailNotificationsSaved));
+            const pushNotificationsToggle = document.getElementById('push-notifications-toggle');
+            if (pushNotificationsToggle) pushNotificationsToggle.addEventListener('click', () => displayMessageBox("Push Notifications", t.pushNotificationsNotAvailable));
+            
+            // Data Controls (alerts use translated strings directly)
+            const chatHistoryToggle = document.getElementById('chat-history-toggle');
+            if (chatHistoryToggle) chatHistoryToggle.addEventListener('click', () => displayMessageBox("Chat History", t.chatHistorySaved));
+            const exportDataBtn = document.getElementById('export-data-btn');
+            if (exportDataBtn) exportDataBtn.addEventListener('click', () => displayMessageBox("Export Data", t.exportingData));
+
+            // Security (alerts use translated strings directly)
+            const setup2FABtn = document.getElementById('setup-2fa-btn');
+            if (setup2FABtn) setup2FABtn.addEventListener('click', () => displayMessageBox("2FA Setup", t.twoFASetup));
+            const viewLoginHistoryBtn = document.getElementById('view-login-history-btn');
+            if (viewLoginHistoryBtn) viewLoginHistoryBtn.addEventListener('click', () => displayMessageBox("Login History", t.loginHistoryView));
+
+            // Account buttons (alerts use translated strings directly)
+            const changePasswordBtn = document.getElementById('change-password-btn');
+            if (changePasswordBtn) changePasswordBtn.addEventListener('click', () => displayMessageBox("Change Password", t.passwordChangeNotImplemented));
+            const deleteAccountBtn = document.getElementById('delete-account-btn');
+            if (deleteAccountBtn) deleteAccountBtn.addEventListener('click', () => displayMessageBox("Delete Account", t.accountDeletionNotImplemented));
+        }
+
+
+        // --- Event Listeners ---
+        // Auth Listeners
+        if (showSignup) {
+            showSignup.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (loginForm) loginForm.classList.add('hidden');
+                if (signupForm) signupForm.classList.remove('hidden');
+                setLanguage(interfaceLanguage); // Re-apply language after form switch
+            });
+        }
+
+        if (showLogin) {
+            showLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (signupForm) signupForm.classList.add('hidden');
+                if (loginForm) loginForm.classList.remove('hidden');
+                setLanguage(interfaceLanguage); // Re-apply language after form switch
+            });
+        }
+
+        if (loginButton) {
+            loginButton.addEventListener('click', async () => {
+                const emailInput = document.getElementById('login-email');
+                const passwordInput = document.getElementById('login-password');
+                const email = emailInput ? emailInput.value : '';
+                const password = passwordInput ? passwordInput.value : '';
+
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) {
+                    displayMessageBox("Login Error", error.message);
+                }
+            });
+        }
+
+        if (signupButton) {
+            signupButton.addEventListener('click', async () => {
+                const emailInput = document.getElementById('signup-email');
+                const passwordInput = document.getElementById('signup-password');
+                const email = emailInput ? emailInput.value : '';
+                const password = passwordInput ? passwordInput.value : '';
+
+                const passwordError = validatePassword(password);
+                if (passwordError) {
+                    displayMessageBox("Password Error", passwordError);
+                    return;
+                }
+
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                
+                if (error) {
+                    displayMessageBox("Sign Up Error", error.message);
+                } else if (data.session) {
+                    displayMessageBox("Success", translations[interfaceLanguage].accountCreatedLoggedIn);
+                } else if (data.user) {
+                    displayMessageBox("Success", translations[interfaceLanguage].accountCreatedCheckEmail);
+                } else {
+                    displayMessageBox("Sign Up Error", translations[interfaceLanguage].unexpectedErrorSignUp);
+                }
+            });
+        }
+        
+        if (loginPasswordInput) {
+            loginPasswordInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && loginButton) loginButton.click();
+            });
+        }
+
+
+        // Chat Listeners
+        if (sendButton) {
+            sendButton.addEventListener('click', () => sendMessage(false));
+        }
+        if (userInput) {
+            userInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage(false);
+                }
+            });
+            userInput.addEventListener('input', () => {
+                userInput.style.height = 'auto';
+                userInput.style.height = userInput.scrollHeight + 'px';
+                // Show send button if there's text or a file is selected
+                if (sendButton) sendButton.classList.toggle('hidden', userInput.value.trim().length === 0 && !fileInput.files.length);
+            });
+        }
+        if (profileButton) {
+            profileButton.addEventListener('click', (event) => {
+                event.stopPropagation(); // Stop propagation to prevent document click from immediately closing
+                if (profileDropdown) profileDropdown.classList.toggle('show');
+            });
+        }
+        document.addEventListener('click', (event) => {
+            if (profileDropdown && profileButton) {
+                // Close dropdown if click is outside profileDropdown and profileButton
+                if (!profileDropdown.contains(event.target) && !profileButton.contains(event.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            }
+        });
+        if (modalCloseButton) modalCloseButton.addEventListener('click', hideModal);
+        if (modalOkButton) modalOkButton.addEventListener('click', hideModal); // "Save" button just closes the modal
+        if (customModal) {
+            customModal.addEventListener('click', (event) => {
+                if (event.target === customModal) {
+                    hideModal();
+                }
+            });
+        }
+        if (micButton) micButton.addEventListener('click', toggleSpeechRecognition);
+
+        // New: File Upload Listeners
+        if (uploadButton) {
+            uploadButton.addEventListener('click', () => {
+                if (!userId || userId === 'anonymous') {
+                    displayMessageBox("Login Required", translations[interfaceLanguage].notLoggedInSendMessage);
+                    return;
+                }
+                fileInput.click(); // Trigger the hidden file input click
+            });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+                if (file.size > MAX_FILE_SIZE) {
+                    displayMessageBox(translations[interfaceLanguage].fileUploadError, translations[interfaceLanguage].fileTooLarge);
+                    fileInput.value = ''; // Clear the input
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const fileData = {
+                        name: file.name,
+                        type: file.type,
+                        data: e.target.result.split(',')[1] // Get base64 data part
+                    };
+                    await sendMessage(false, fileData); // Send file data
+                    displayMessageBox(translations[interfaceLanguage].success, translations[interfaceLanguage].fileUploadSuccess);
+                };
+                reader.onerror = () => {
+                    displayMessageBox(translations[interfaceLanguage].fileUploadError, translations[interfaceLanguage].anErrorOccurred + " Could not read file.");
+                };
+                reader.readAsDataURL(file); // Read file as Data URL (base64)
+            });
+        }
+        
+        // Sidebar Listeners
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => {
+                if (sidebar) sidebar.classList.toggle('collapsed');
+            });
+        }
+        
+        if (newChatBtn) {
+            newChatBtn.addEventListener('click', () => {
+                const currentMessages = chatContainer ? Array.from(chatContainer.querySelectorAll('.message')) : [];
+                const isNewUnsavedChat = !recentChats.some(chat => chat.id === currentChatId);
+
+                if (currentMessages.length > 1 && isNewUnsavedChat) { 
+                    const firstUserMessage = currentMessages.find(m => m.classList.contains('user'));
+                    const chatTitle = firstUserMessage ? firstUserMessage.querySelector('.message-bubble').textContent.substring(0, 30) + '...' : `${translations[interfaceLanguage].chatFrom} ${new Date().toLocaleTimeString()}`;
+                    recentChats.unshift({ id: currentChatId, title: chatTitle, messages: chatContainer.innerHTML });
+                }
+                currentChatId = Date.now();
+                if (chatContainer) chatContainer.innerHTML = '';
+                addMessageToUI('ai', translations[interfaceLanguage].helloAidexWelcome, translations[interfaceLanguage].helloAidexWelcome); // Pass raw text
+                renderRecentChats();
+            });
+        }
+        
+        function renderRecentChats() {
+            const t = translations[interfaceLanguage];
+            const list = recentChats.map(chat => `
+                <div class="recent-chat-item" data-id="${chat.id}">
+                    <span>${chat.title}</span>
+                    <div class="relative">
+                        <button class="chat-options-btn" data-id="${chat.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                        </button>
+                        <div class="chat-options-menu" id="menu-${chat.id}">
+                            <button class="delete-chat-btn" data-id="${chat.id}">${t.delete}</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            if (recentChatsList) recentChatsList.innerHTML = `<div class="recent-chats-header">${t.recentChats}</div>` + list;
+            
+            document.querySelectorAll('.recent-chat-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.chat-options-btn') || e.target.closest('.chat-options-menu')) return;
+                    const chatId = e.currentTarget.dataset.id;
+                    const chat = recentChats.find(c => c.id == chatId);
+                    if (chat && chatContainer) {
+                        chatContainer.innerHTML = chat.messages;
+                        currentChatId = chat.id;
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.chat-options-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const menu = document.getElementById(`menu-${e.currentTarget.dataset.id}`);
+                    if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                });
+            });
+
+            document.querySelectorAll('.delete-chat-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const chatId = e.currentTarget.dataset.id;
+                    if (chatId == currentChatId && newChatBtn) {
+                         newChatBtn.click();
+                    }
+                    recentChats = recentChats.filter(c => c.id != chatId);
+                    renderRecentChats();
+                });
+            });
+        }
+
+
+        // --- Initial Setup ---
+        window.onload = () => {
+            initializeSupabase();
+            initSpeechRecognition();
+             window.speechSynthesis.onvoiceschanged = populateVoices;
+            populateVoices();
+
+            // Set initial language
+            setLanguage(interfaceLanguage);
+
+            scrollToBottom();
+            if (sendButton && userInput) {
+                sendButton.classList.toggle('hidden', userInput.value.trim().length === 0);
+            }
+        };
+
+        // Profile Dropdown Link Event Listeners (Modified)
+        if (customizeAidexLink) {
+            customizeAidexLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent immediate closing due to document click
+                if (profileDropdown) profileDropdown.classList.remove('show'); // Manually close after action
+                showModal("customizeAidex", getCustomizeAidexHTML(), true, true);
+                attachCustomizeAidexListeners();
+            });
+        }
+
+        if (generalSettingsLink) {
+            generalSettingsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent immediate closing due to document click
+                if (profileDropdown) profileDropdown.classList.remove('show'); // Manually close after action
+                showModal("generalSettings", getGeneralSettingsHTML(), true, true);
+                attachGeneralSettingsListeners();
+            });
+        }
+
+        if (helpLink) {
+            helpLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent immediate closing due to document click
+                if (profileDropdown) profileDropdown.classList.remove('show'); // Manually close after action
+                displayMessageBox(translations[interfaceLanguage].helpModalTitle, translations[interfaceLanguage].helpModalContent);
+            });
+        }
+
+        if (logoutLink) {
+            logoutLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent immediate closing due to document click
+                if (profileDropdown) profileDropdown.classList.remove('show'); // Manually close after action
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) {
+                    displayMessageBox("logoutError", translations[interfaceLanguage].failedToLogout);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
