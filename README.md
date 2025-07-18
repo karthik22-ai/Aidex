@@ -1,5 +1,5 @@
 # Aidex
-# 🤖 Aidex: Your All-in-One AI Assistant
+# 🤖 Aidex: Your Medical assistant
 
 Aidex is an AI-powered virtual assistant designed to act as a brain that listens, thinks, and responds like a human—combining voice, vision, and reasoning into a seamless interface. Built with FastAPI and a modern frontend, Aidex leverages LLMs and real-time input to deliver personalized, human-centric interactions.
 
@@ -10,7 +10,7 @@ Aidex is an AI-powered virtual assistant designed to act as a brain that listens
 - 🌐 Frontend (HTML, JS): Interactive UI for chat with AI brain.
 - ⚙️ Backend (FastAPI): Handles requests, integrates with AI agents.
 - 🧠 LLM/Agents: Powered by Gemini/OpenAI with multi-agent logic.
-- 🎤 Voice & Vision Support (Pluggable): Expandable architecture for webcam and voice integration.
+- 🎤 Voice Support (Pluggable): Expandable architecture for voice integration.
 - 📡 Deployable on Render with GitHub CI/CD.
 
 ---
