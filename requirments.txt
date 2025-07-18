@@ -5,3 +5,4 @@ pillow
 aiofiles
 requests
 google-generativeai
+aiohttp
